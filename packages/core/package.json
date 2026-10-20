@@ -1,0 +1,19 @@
+{
+  "name": "@ledger/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./validation": "./src/validation.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "zod": "^4.1.0"
+  }
+}

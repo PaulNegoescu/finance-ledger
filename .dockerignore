@@ -1,0 +1,8 @@
+.git
+**/node_modules
+**/.turbo
+**/dist
+**/.output
+.env*
+imports
+backups
