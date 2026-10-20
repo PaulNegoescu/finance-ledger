@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.output/
+.turbo/
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+imports/
+backups/

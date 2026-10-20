@@ -1,0 +1,25 @@
+{
+  "name": "finance-ledger",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "db:generate": "pnpm --filter @ledger/db generate",
+    "db:migrate": "pnpm --filter @ledger/db migrate",
+    "test:integration": "pnpm --filter @ledger/db test:integration"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "prettier": "3.6.2",
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
