@@ -30,6 +30,51 @@ describe.skipIf(!url)(
     afterAll(async () => {
       await ledger?.close();
     });
+    it("previews without writes and rechecks duplicates on confirmation", async () => {
+      const account = `${prefix}-preview`;
+      const input = { account, currency: "RON", csv };
+      const first = await ledger.previewCsv(input);
+      expect(first.newCount).toBe(1);
+      expect(first.duplicateCount).toBe(0);
+      const readOnlyCheck = postgres(url!, { max: 1 });
+      try {
+        expect(
+          await readOnlyCheck`select id from accounts where name = ${account}`,
+        ).toHaveLength(0);
+      } finally {
+        await readOnlyCheck.end();
+      }
+
+      expect(
+        (await ledger.list()).transactions.some((t) => t.account === account),
+      ).toBe(false);
+      // A second import can happen after preview: confirmation must safely skip it.
+      expect((await ledger.importCsv(input)).inserted).toBe(1);
+      expect(await ledger.importCsv(input)).toEqual({
+        inserted: 0,
+        skipped: 1,
+      });
+      const again = await ledger.previewCsv(input);
+      expect(again.newCount).toBe(0);
+      expect(again.duplicateCount).toBe(1);
+      expect(again.rows[0].duplicate).toBe(true);
+      const invalid = await ledger.previewCsv({
+        ...input,
+        csv: csv + "\n31.02.2026;Bad date;1,00;;RON;",
+      });
+      expect(invalid.issues[0].row).toBe(3);
+      const overlap = await ledger.previewCsv({
+        ...input,
+        csv: csv + "\n02.10.2026;New demo;2,00;;RON;",
+      });
+      expect([overlap.newCount, overlap.duplicateCount]).toEqual([1, 1]);
+      const wrongCurrency = await ledger.previewCsv({
+        ...input,
+        currency: "EUR",
+        csv: csv.replaceAll("RON", "EUR"),
+      });
+      expect(wrongCurrency.issues.some((i) => i.row === null)).toBe(true);
+    });
     it("imports atomically, deduplicates concurrent and overlapping imports, preserves manual overrides", async () => {
       const input = { account: prefix, currency: "RON", csv };
       const results = await Promise.all([

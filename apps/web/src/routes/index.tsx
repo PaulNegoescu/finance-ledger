@@ -1,11 +1,10 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import { ImportCsv } from "../components/ImportCsv";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   addCategory,
   addRule,
   assignCategory,
-  importCsv,
   listLedger,
 } from "../server/functions";
 export const Route = createFileRoute("/")({
@@ -32,23 +31,6 @@ function Home() {
       setBusy(false);
     }
   }
-  function submitImport(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    void run(async () => {
-      const file = form.get("file") as File;
-      if (!file || file.size > 2_000_000 || !file.size)
-        return "Select a UTF-8 CSV file up to 2 MB.";
-      const result = await importCsv({
-        data: {
-          account: String(form.get("account")),
-          currency: String(form.get("currency")),
-          csv: await file.text(),
-        },
-      });
-      return `${result.inserted} transactions imported; ${result.skipped} already exist.`;
-    });
-  }
   const rows = data.transactions.filter(
     (t) => !onlyUnassigned || !t.categoryId,
   );
@@ -64,40 +46,12 @@ function Home() {
         {message && <p>{message}</p>}
       </div>
       <div className="grid">
-        <section className="panel">
-          <h2>Import ING CSV</h2>
-          <form onSubmit={submitImport}>
-            <fieldset disabled={busy || unavailable}>
-              <label>
-                Account name
-                <input
-                  name="account"
-                  placeholder="Current account"
-                  maxLength={100}
-                  required
-                />
-              </label>
-              <label>
-                Currency
-                <select name="currency">
-                  <option>RON</option>
-                  <option>EUR</option>
-                  <option>USD</option>
-                </select>
-              </label>
-              <label>
-                CSV file (UTF-8, up to 2 MB)
-                <input
-                  name="file"
-                  type="file"
-                  accept=".csv,text/csv"
-                  required
-                />
-              </label>
-              <button>Import transactions</button>
-            </fieldset>
-          </form>
-        </section>
+        <ImportCsv
+          disabled={busy || unavailable}
+          onImported={async () => {
+            await router.invalidate();
+          }}
+        />
         <section className="panel">
           <h2>Categories and rules</h2>
           <form
