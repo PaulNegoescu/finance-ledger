@@ -159,3 +159,11 @@ a name and currency. The form rejects names matching an existing account after c
 and surrounding-space normalization. New accounts are still created only by confirmed
 imports, never by preview. After a successful new-account import, the form selects the
 saved account. Changing account details clears the preview as before.
+
+The public preview/confirmation endpoints require an existing `accountId` or explicit
+`createAccount: true`, never both. Existing account IDs are authoritative; supplied
+names cannot silently redirect an import. Missing IDs fail without account creation.
+New names are checked again on the server under the import lock, including concurrent
+case variants. The database service retains name-based input for internal callers/tests;
+the browser endpoints enforce explicit intent. UTF-8 CSV size is checked by encoded byte
+length on the server as well as file size in the browser.

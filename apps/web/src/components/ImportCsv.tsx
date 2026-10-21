@@ -3,7 +3,13 @@ import type { FormEvent } from "react";
 import { importCsv, previewCsv } from "../server/functions";
 
 type Review = Awaited<ReturnType<typeof previewCsv>>;
-type Input = { account: string; currency: string; csv: string };
+type Input = {
+  account: string;
+  currency: string;
+  csv: string;
+  accountId?: string;
+  createAccount?: boolean;
+};
 const pageSize = 25;
 export function ImportCsv({
   disabled,
@@ -83,6 +89,8 @@ export function ImportCsv({
         return;
       }
       const input = {
+        accountId: creating ? undefined : account!.id,
+        createAccount: creating,
         account: creating ? newName.trim() : account!.name,
         currency: creating ? newCurrency : account!.currency,
         csv,
