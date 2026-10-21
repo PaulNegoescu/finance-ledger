@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { importCsv, previewCsv } from "../server/functions";
 
@@ -8,10 +8,29 @@ const pageSize = 25;
 export function ImportCsv({
   disabled,
   onImported,
+  accounts,
 }: {
+  accounts: { id: string; name: string; currency: string }[];
   disabled: boolean;
   onImported: () => Promise<void>;
 }) {
+  const [accountId, setAccountId] = useState(
+    accounts.length === 1 ? accounts[0].id : accounts.length ? "" : "__new__",
+  );
+  const [newName, setNewName] = useState("");
+  const [newCurrency, setNewCurrency] = useState("RON");
+  const [savedAccount, setSavedAccount] = useState<string | null>(null);
+  const account = accounts.find((item) => item.id === accountId);
+  const creating = accountId === "__new__";
+  useEffect(() => {
+    if (!savedAccount) return;
+    const saved = accounts.find((item) => item.name === savedAccount);
+    if (saved) {
+      setAccountId(saved.id);
+      setSavedAccount(null);
+      setNewName("");
+    }
+  }, [accounts, savedAccount]);
   const [review, setReview] = useState<{ input: Input; result: Review } | null>(
     null,
   );
@@ -30,6 +49,27 @@ export function ImportCsv({
       setMessage("Select a UTF-8 CSV file up to 2 MB.");
       return;
     }
+    if (creating && !newName.trim()) {
+      setMessage("Enter a name for the new account.");
+      return;
+    }
+    if (!creating && !account) {
+      setMessage("Choose an account.");
+      return;
+    }
+    if (
+      creating &&
+      accounts.some(
+        (item) =>
+          item.name.normalize("NFKC").trim().toLowerCase() ===
+          newName.normalize("NFKC").trim().toLowerCase(),
+      )
+    ) {
+      setMessage(
+        "An account with this name already exists. Select it from the account list.",
+      );
+      return;
+    }
     setBusy(true);
     try {
       const bytes = await file.arrayBuffer();
@@ -43,8 +83,8 @@ export function ImportCsv({
         return;
       }
       const input = {
-        account: String(form.get("account")),
-        currency: String(form.get("currency")),
+        account: creating ? newName.trim() : account!.name,
+        currency: creating ? newCurrency : account!.currency,
         csv,
       };
       setReview({ input, result: await previewCsv({ data: input }) });
@@ -69,6 +109,7 @@ export function ImportCsv({
     setMessage("");
     try {
       const result = await importCsv({ data: review.input });
+      setSavedAccount(review.input.account);
       setReview(null);
       setMessage(
         `${result.inserted} transactions imported; ${result.skipped} already exist.`,
@@ -107,21 +148,54 @@ export function ImportCsv({
           }}
         >
           <fieldset className="import-fields" disabled={busy || disabled}>
-            <label>
-              Account name
-              <input
-                name="account"
-                placeholder="Current account"
-                maxLength={100}
-                required
-              />
-            </label>
+            <div className="account-picker">
+              <label>
+                Account
+                <select
+                  value={accountId}
+                  onChange={(event) => setAccountId(event.target.value)}
+                >
+                  <option value="" disabled>
+                    Choose account
+                  </option>
+                  {accounts.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                  <option value="__new__">Create new account…</option>
+                </select>
+              </label>
+              {creating && (
+                <label className="new-account-name">
+                  New account name
+                  <input
+                    value={newName}
+                    onChange={(event) => setNewName(event.target.value)}
+                    placeholder="Current account"
+                    maxLength={100}
+                    required
+                  />
+                </label>
+              )}
+            </div>
             <label>
               Currency
-              <select name="currency">
-                <option>RON</option>
-                <option>EUR</option>
-                <option>USD</option>
+              <select
+                disabled={!creating}
+                value={creating ? newCurrency : (account?.currency ?? "")}
+                onChange={(event) => setNewCurrency(event.target.value)}
+              >
+                {Array.from(
+                  new Set([
+                    "RON",
+                    "EUR",
+                    "USD",
+                    ...accounts.map((item) => item.currency),
+                  ]),
+                ).map((currency) => (
+                  <option key={currency}>{currency}</option>
+                ))}
               </select>
             </label>
             <label className="import-file">

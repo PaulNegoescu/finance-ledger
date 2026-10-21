@@ -150,3 +150,12 @@ invalid category leaves all rows unchanged. Assignments become manual and clear 
 rule references; clearing returns rows to uncategorized. Selection resets when filters,
 pages or data change. No cross-page or implicit “all matching transactions” selection
 is performed.
+
+## Choosing an account for import
+
+Choose an existing account in the import form; its currency is fixed. With multiple
+accounts, the form requires an explicit choice. Select **Create new account…** to enter
+a name and currency. The form rejects names matching an existing account after case
+and surrounding-space normalization. New accounts are still created only by confirmed
+imports, never by preview. After a successful new-account import, the form selects the
+saved account. Changing account details clears the preview as before.
