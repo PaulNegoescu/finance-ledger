@@ -11,7 +11,7 @@ async function safeWrite<T>(action: () => Promise<T>): Promise<T> {
     return await action();
   } catch {
     throw new Error(
-      "Operația nu a putut fi finalizată. Verifică datele și conexiunea PostgreSQL.",
+      "Unable to save changes. Check your input and connection, then try again.",
     );
   }
 }
@@ -30,6 +30,12 @@ export const listLedger = createServerFn({ method: "GET" }).handler(
     }
   },
 );
+export const previewCsv = createServerFn({ method: "POST" })
+  .validator(importInput)
+  .handler(async ({ data }) => {
+    const { getLedger } = await import("./ledger.server");
+    return safeWrite(() => getLedger().previewCsv(data));
+  });
 export const importCsv = createServerFn({ method: "POST" })
   .validator(importInput)
   .handler(async ({ data }) => {

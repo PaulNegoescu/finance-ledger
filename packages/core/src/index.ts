@@ -34,12 +34,14 @@ export function money(value: string): number {
     text = text.replace(/\./g, "").replace(",", ".");
   else if (/^-?\d+,\d{2}$/.test(text)) text = text.replace(",", ".");
   if (!/^-?\d+(\.\d{1,2})?$/.test(text))
-    throw new Error("Sumă invalidă sau ambiguă. Folosește două zecimale.");
+    throw new Error(
+      "Invalid or ambiguous amount. Use at most two decimal places.",
+    );
   const negative = text.startsWith("-");
   const [whole, fraction = ""] = text.replace("-", "").split(".");
   const result = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
   if (!Number.isSafeInteger(result) || result > 999_999_999_999)
-    throw new Error("Sumă prea mare.");
+    throw new Error("Amount is too large.");
   return negative ? -result : result;
 }
 function date(value: string) {
@@ -51,7 +53,7 @@ function date(value: string) {
     !Number.isFinite(Date.parse(result)) ||
     new Date(result).toISOString().slice(0, 10) !== result
   )
-    throw new Error("Dată invalidă.");
+    throw new Error("Invalid date. Use DD.MM.YYYY, DD/MM/YYYY or YYYY-MM-DD.");
   return result;
 }
 const aliases: Record<string, string> = {
@@ -73,14 +75,20 @@ const aliases: Record<string, string> = {
   referinta: "reference",
   reference: "reference",
 };
-export function parseIngCsv(csv: string, currency: string): LedgerRow[] {
+export type CsvIssue = { row: number | null; message: string };
+export type CsvReview = {
+  rows: (LedgerRow & { sourceRow: number })[];
+  issues: CsvIssue[];
+};
+export function reviewIngCsv(csv: string, currency: string): CsvReview {
   const clean = csv.replace(/^\uFEFF/, "");
   const first = clean.split(/\r?\n/)[0] ?? "";
   const delimiter = first.includes(";") ? ";" : ",";
-  let records: Record<string, string>[];
+  let records: { record: Record<string, string>; info: { lines: number } }[];
   try {
     records = parse(clean, {
       delimiter,
+      info: true,
       skip_empty_lines: true,
       trim: true,
       columns: (headers: string[]) => {
@@ -104,21 +112,39 @@ export function parseIngCsv(csv: string, currency: string): LedgerRow[] {
         return mapped;
       },
     });
-  } catch {
-    throw new Error(
-      "CSV invalid. Verifică antetul, separatorul și ghilimelele conform profilului documentat.",
-    );
+  } catch (error) {
+    const line = (error as { lines?: number }).lines;
+    return {
+      rows: [],
+      issues: [
+        {
+          row: line ?? null,
+          message:
+            "Invalid CSV. Check headers, delimiters, column counts and quotation marks.",
+        },
+      ],
+    };
   }
   if (!records.length || records.length > 5000)
-    throw new Error(
-      "Importul trebuie să conțină între 1 și 5000 de tranzacții.",
-    );
+    return {
+      rows: [],
+      issues: [
+        {
+          row: null,
+          message: "The file must contain between 1 and 5000 transactions.",
+        },
+      ],
+    };
+  const issues: CsvIssue[] = [];
+  const rows: CsvReview["rows"] = [];
   const occurrences = new Map<string, number>();
-  return records.map((r, index) => {
+  for (const { record: r, info } of records) {
     try {
       const rowCurrency = (r.currency || currency).trim().toUpperCase();
       if (rowCurrency !== currency)
-        throw new Error("Valuta diferă de valuta contului.");
+        throw new Error(
+          "Currency does not match the selected account currency.",
+        );
       const description = z
         .string()
         .trim()
@@ -136,11 +162,11 @@ export function parseIngCsv(csv: string, currency: string): LedgerRow[] {
         const credit = r.credit ? money(r.credit) : 0;
         if (debit < 0 || credit < 0 || (debit !== 0 && credit !== 0))
           throw new Error(
-            "Debit/credit trebuie să fie pozitive, cu o singură valoare nenulă.",
+            "Debit and credit must be positive, with only one non-zero value.",
           );
         amountMinor = credit - debit;
       }
-      if (amountMinor === 0) throw new Error("Tranzacție cu sumă zero.");
+      if (amountMinor === 0) throw new Error("Amount must not be zero.");
       const row = {
         date: date(r.date ?? ""),
         description,
@@ -159,13 +185,30 @@ export function parseIngCsv(csv: string, currency: string): LedgerRow[] {
       );
       const occurrence = (occurrences.get(identity) ?? 0) + 1;
       occurrences.set(identity, occurrence);
-      return { ...row, fingerprint: hash(`${identity}:${occurrence}`) };
+      rows.push({
+        ...row,
+        fingerprint: hash(`${identity}:${occurrence}`),
+        sourceRow: info.lines,
+      });
     } catch (error) {
-      throw new Error(
-        `Rândul ${index + 2}: ${error instanceof z.ZodError ? "Descriere sau referință invalidă." : (error as Error).message}`,
-      );
+      issues.push({
+        row: info.lines,
+        message:
+          error instanceof z.ZodError
+            ? "Description must contain 1–2000 characters; reference must be at most 200 characters."
+            : (error as Error).message,
+      });
     }
-  });
+  }
+  return { rows, issues };
+}
+export function parseIngCsv(csv: string, currency: string): LedgerRow[] {
+  const review = reviewIngCsv(csv, currency);
+  if (review.issues.length) {
+    const issue = review.issues[0];
+    throw new Error(`${issue.row ? `Row ${issue.row}: ` : ""}${issue.message}`);
+  }
+  return review.rows.map(({ sourceRow, ...row }) => row);
 }
 export function categorize(description: string, rules: Rule[]) {
   return (

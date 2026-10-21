@@ -1,0 +1,4 @@
+Data;Descriere;Debit;Credit;Valuta;Referinta
+31.02.2026;Invalid date demo;10,00;;RON;DEMO-ERROR-1
+02.10.2026;Invalid amount demo;invalid;;RON;DEMO-ERROR-2
+03.10.2026;Valid demo row;25,00;;RON;DEMO-VALID
