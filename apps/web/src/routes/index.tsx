@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ImportCsv } from "../components/ImportCsv";
-import { Transactions } from "../components/Transactions";
-import { RuleManager } from "../components/RuleManager";
+import { Overview } from "../components/Overview";
+import { PageHeader } from "../components/PageHeader";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { listLedger } from "../server/functions";
 export const Route = createFileRoute("/")({
@@ -18,28 +18,21 @@ function Home() {
   }
   return (
     <main>
-      <header className="page-header">
-        <h1>Finance Ledger</h1>
-        <RuleManager
-          categories={data.categories}
-          rules={data.rules}
-          disabled={unavailable}
-          onChanged={refresh}
-        />
-      </header>
+      <PageHeader data={data} unavailable={unavailable} onChanged={refresh} />
       {unavailable && (
         <p role="alert" className="notice">
           Transactions are unavailable. Check the database connection.
         </p>
       )}
       <ImportCsv disabled={unavailable} onImported={refresh} />
-      <Transactions
-        categories={data.categories}
-        accounts={data.accounts}
-        revision={revision}
-        disabled={unavailable}
-        onAssigned={refresh}
-      />
+      <div className="home-overview">
+        <Overview
+          accounts={data.accounts}
+          revision={revision}
+          disabled={unavailable}
+          currentMonth
+        />
+      </div>
     </main>
   );
 }

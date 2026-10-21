@@ -125,3 +125,28 @@ by transactions or rules cannot be deleted.
 CSV validation also rejects malformed internal amount spacing and correctly recognizes
 quoted delimiters in headers. After an uncertain confirmation response, preview again
 to check what was saved instead of assuming the import failed.
+
+## Overview, import history and bulk categories
+
+Home shows the current month’s overview, using Europe/Bucharest month boundaries.
+Use header navigation for **Transactions**, **Import history** and the full **Overview**
+page. Reports load automatically on their pages. The full overview
+reports money in, money out and net flow by currency, with account/date filters,
+monthly totals and category spending. It summarizes all matching transactions rather
+than the current page. These are transaction cash flows, not account balances: opening
+balances, transfers and currency conversion are not inferred. Currencies are never
+combined; SQL aggregates remain exact integer strings and display uses BigInt.
+
+Import history lists saved batches with account, currency, import time and the number
+of transactions actually added. Exact-file reimports create no new batch; distinct
+fully overlapping exports can show a zero-transaction batch. Original row counts and
+skipped counts were not stored, so history does not invent them. Raw CSV data and hashes
+are not exposed. History is read-only and supports account filtering and pagination.
+
+Select transaction checkboxes on the current page to reveal bulk category controls.
+Choose a category or **Clear category**, then **Apply to selected**. Only explicitly
+selected rows change. Every ID and category is validated atomically; a missing row or
+invalid category leaves all rows unchanged. Assignments become manual and clear prior
+rule references; clearing returns rows to uncategorized. Selection resets when filters,
+pages or data change. No cross-page or implicit “all matching transactions” selection
+is performed.
