@@ -65,20 +65,27 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
     setMode(next);
   }
   return (
-    <section className="panel">
-      <h2>Categories and rules</h2>
-      <div className="management-buttons">
+    <>
+      <nav className="management-links" aria-label="Management">
         <button
           type="button"
+          className="header-link"
+          aria-haspopup="dialog"
           disabled={locked}
           onClick={() => open("categories")}
         >
           Manage categories
         </button>
-        <button type="button" disabled={locked} onClick={() => open("rules")}>
+        <button
+          type="button"
+          className="header-link"
+          aria-haspopup="dialog"
+          disabled={locked}
+          onClick={() => open("rules")}
+        >
           Manage rules
         </button>
-      </div>
+      </nav>
       {mode && (
         <Modal
           title={mode === "categories" ? "Manage categories" : "Manage rules"}
@@ -463,6 +470,6 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
           )}
         </Modal>
       )}
-    </section>
+    </>
   );
 }

@@ -111,7 +111,8 @@ category, uncategorized and inclusive date filters across the full ledger. Searc
 matches a literal, case-insensitive description substring; `%` and `_` are not
 wildcards. Filters reset the page, and a shortened result set clamps to its last page.
 
-Open **Manage categories** or **Manage rules** to work in separate modal dialogs.
+Use the **Manage categories** and **Manage rules** links in the page header to open
+separate modal dialogs. The import form uses a compact horizontal layout on wider screens.
 Close returns focus to the opening button; Escape closes an idle dialog.
 Categories can be renamed, and unused categories can be deleted. Rules can be edited,
 prioritized or removed. Lower priority numbers win; ties use the existing stable ID

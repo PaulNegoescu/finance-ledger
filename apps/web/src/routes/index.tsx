@@ -18,20 +18,21 @@ function Home() {
   }
   return (
     <main>
-      <h1>Finance Ledger</h1>
-      {unavailable && (
-        <p role="alert" className="notice">
-          Transactions are unavailable. Check the database connection.
-        </p>
-      )}
-      <ImportCsv disabled={unavailable} onImported={refresh}>
+      <header className="page-header">
+        <h1>Finance Ledger</h1>
         <RuleManager
           categories={data.categories}
           rules={data.rules}
           disabled={unavailable}
           onChanged={refresh}
         />
-      </ImportCsv>
+      </header>
+      {unavailable && (
+        <p role="alert" className="notice">
+          Transactions are unavailable. Check the database connection.
+        </p>
+      )}
+      <ImportCsv disabled={unavailable} onImported={refresh} />
       <Transactions
         categories={data.categories}
         accounts={data.accounts}

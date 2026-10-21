@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent } from "react";
 import { importCsv, previewCsv } from "../server/functions";
 
 type Review = Awaited<ReturnType<typeof previewCsv>>;
@@ -8,9 +8,7 @@ const pageSize = 25;
 export function ImportCsv({
   disabled,
   onImported,
-  children,
 }: {
-  children?: ReactNode;
   disabled: boolean;
   onImported: () => Promise<void>;
 }) {
@@ -95,9 +93,11 @@ export function ImportCsv({
   const result = review?.result;
   const pageCount = Math.ceil((result?.rows.length ?? 0) / pageSize);
   return (
-    <div className="grid">
+    <div className="import-workspace">
       <section className="panel">
-        <h2>Import ING CSV</h2>
+        <div className="import-header">
+          <h2>Import ING CSV</h2>
+        </div>
         <form
           onSubmit={preview}
           onChange={() => {
@@ -106,7 +106,7 @@ export function ImportCsv({
             setPage(0);
           }}
         >
-          <fieldset disabled={busy || disabled}>
+          <fieldset className="import-fields" disabled={busy || disabled}>
             <label>
               Account name
               <input
@@ -124,7 +124,7 @@ export function ImportCsv({
                 <option>USD</option>
               </select>
             </label>
-            <label>
+            <label className="import-file">
               CSV file (UTF-8, up to 2 MB)
               <input name="file" type="file" accept=".csv,text/csv" required />
             </label>
@@ -135,7 +135,6 @@ export function ImportCsv({
           {message && <p>{message}</p>}
         </div>
       </section>
-      {children}
       {review && result && (
         <section className="panel import-review">
           <h2>Review import</h2>
