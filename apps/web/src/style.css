@@ -401,3 +401,32 @@ button.header-link:hover:not(:disabled) {
 .bulk-controls .actions {
   margin-top: 0;
 }
+.brand-home {
+  font-size: 28px;
+  font-weight: 600;
+  color: #155e63;
+  text-decoration: none;
+}
+.header-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+}
+.management-links a {
+  color: #155e63;
+  padding: 4px 0;
+  text-underline-offset: 4px;
+  font-size: 14px;
+}
+.management-links a[aria-current="page"] {
+  font-weight: 600;
+  text-decoration: none;
+}
+.page-title {
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+.home-overview {
+  margin-top: 24px;
+}

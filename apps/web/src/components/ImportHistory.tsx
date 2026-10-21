@@ -9,7 +9,6 @@ type Props = {
 type HistoryPage = Awaited<ReturnType<typeof listImportHistory>>;
 const pageSize = 20;
 export function ImportHistory({ accounts, revision, disabled }: Props) {
-  const [open, setOpen] = useState(false);
   const [accountId, setAccountId] = useState("");
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<HistoryPage | null>(null);
@@ -22,7 +21,7 @@ export function ImportHistory({ accounts, revision, disabled }: Props) {
   }, [revision]);
   useEffect(() => {
     const id = ++request.current;
-    if (!open || disabled) {
+    if (disabled) {
       setLoading(false);
       return;
     }
@@ -44,127 +43,121 @@ export function ImportHistory({ accounts, revision, disabled }: Props) {
     return () => {
       if (request.current === id) request.current++;
     };
-  }, [open, disabled, accountId, page, revision, refresh]);
+  }, [disabled, accountId, page, revision, refresh]);
   const totalPages = result
     ? Math.max(1, Math.ceil(result.total / result.pageSize))
     : 1;
   return (
-    <details
-      className="panel import-history"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary>Import history</summary>
-      {open && (
-        <div className="history-content">
-          <label>
-            Import account
-            <select
-              value={accountId}
+    <section className="panel" aria-label="Import history">
+      <div className="history-content">
+        <label>
+          Import account
+          <select
+            value={accountId}
+            disabled={disabled || loading}
+            onChange={(event) => {
+              setAccountId(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All accounts</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name} ({account.currency})
+              </option>
+            ))}
+          </select>
+        </label>
+        {disabled && (
+          <p role="alert">
+            Import history is unavailable while the connection is offline.
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="notice">
+            {error}{" "}
+            <button
+              type="button"
+              className="secondary"
               disabled={disabled || loading}
-              onChange={(event) => {
-                setAccountId(event.target.value);
-                setPage(1);
-              }}
+              onClick={() => setRefresh((value) => value + 1)}
             >
-              <option value="">All accounts</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name} ({account.currency})
-                </option>
-              ))}
-            </select>
-          </label>
-          {disabled && (
-            <p role="alert">
-              Import history is unavailable while the connection is offline.
-            </p>
-          )}
-          {error && (
-            <p role="alert" className="notice">
-              {error}{" "}
-              <button
-                type="button"
-                className="secondary"
-                disabled={disabled || loading}
-                onClick={() => setRefresh((value) => value + 1)}
-              >
-                Retry
-              </button>
-            </p>
-          )}
-          <div role="status" aria-live="polite">
-            {loading ? (
-              <p>Loading import history…</p>
-            ) : (
-              !error && !disabled && result && <p>{result.total} imports</p>
-            )}
-          </div>
-          <div aria-busy={loading}>
-            {!loading &&
-              !error &&
-              !disabled &&
-              result &&
-              (result.imports.length ? (
-                <div className="scroll">
-                  <table aria-label="Import history">
-                    <thead>
-                      <tr>
-                        <th scope="col">Imported</th>
-                        <th scope="col">Account</th>
-                        <th scope="col">Currency</th>
-                        <th scope="col">Transactions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.imports.map((batch) => (
-                        <tr key={batch.id}>
-                          <td>
-                            <time dateTime={batch.createdAt}>
-                              {new Intl.DateTimeFormat("en-GB", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              }).format(new Date(batch.createdAt))}
-                            </time>
-                          </td>
-                          <td>{batch.account}</td>
-                          <td>{batch.currency}</td>
-                          <td>{batch.transactionCount}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p>No imports to display.</p>
-              ))}
-          </div>
-          {result && (
-            <nav className="actions" aria-label="Import history pages">
-              <button
-                type="button"
-                className="secondary"
-                disabled={disabled || loading || !!error || result.page <= 1}
-                onClick={() => setPage(result.page - 1)}
-              >
-                Previous
-              </button>
-              <span>
-                Page {result.page} of {totalPages}
-              </span>
-              <button
-                type="button"
-                className="secondary"
-                disabled={
-                  disabled || loading || !!error || result.page >= totalPages
-                }
-                onClick={() => setPage(result.page + 1)}
-              >
-                Next
-              </button>
-            </nav>
+              Retry
+            </button>
+          </p>
+        )}
+        <div role="status" aria-live="polite">
+          {loading ? (
+            <p>Loading import history…</p>
+          ) : (
+            !error && !disabled && result && <p>{result.total} imports</p>
           )}
         </div>
-      )}
-    </details>
+        <div aria-busy={loading}>
+          {!loading &&
+            !error &&
+            !disabled &&
+            result &&
+            (result.imports.length ? (
+              <div className="scroll">
+                <table aria-label="Import history">
+                  <thead>
+                    <tr>
+                      <th scope="col">Imported</th>
+                      <th scope="col">Account</th>
+                      <th scope="col">Currency</th>
+                      <th scope="col">Transactions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.imports.map((batch) => (
+                      <tr key={batch.id}>
+                        <td>
+                          <time dateTime={batch.createdAt}>
+                            {new Intl.DateTimeFormat("en-GB", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }).format(new Date(batch.createdAt))}
+                          </time>
+                        </td>
+                        <td>{batch.account}</td>
+                        <td>{batch.currency}</td>
+                        <td>{batch.transactionCount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>No imports to display.</p>
+            ))}
+        </div>
+        {result && (
+          <nav className="actions" aria-label="Import history pages">
+            <button
+              type="button"
+              className="secondary"
+              disabled={disabled || loading || !!error || result.page <= 1}
+              onClick={() => setPage(result.page - 1)}
+            >
+              Previous
+            </button>
+            <span>
+              Page {result.page} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="secondary"
+              disabled={
+                disabled || loading || !!error || result.page >= totalPages
+              }
+              onClick={() => setPage(result.page + 1)}
+            >
+              Next
+            </button>
+          </nav>
+        )}
+      </div>
+    </section>
   );
 }

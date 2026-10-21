@@ -128,7 +128,9 @@ to check what was saved instead of assuming the import failed.
 
 ## Overview, import history and bulk categories
 
-**Financial overview** and **Import history** stay collapsed until opened. Overview
+Home shows the current month’s overview, using Europe/Bucharest month boundaries.
+Use header navigation for **Transactions**, **Import history** and the full **Overview**
+page. Reports load automatically on their pages. The full overview
 reports money in, money out and net flow by currency, with account/date filters,
 monthly totals and category spending. It summarizes all matching transactions rather
 than the current page. These are transaction cash flows, not account balances: opening

@@ -202,7 +202,9 @@ export function Transactions({
     : 0;
   return (
     <section className="panel ledger" aria-labelledby="transactions-heading">
-      <h2 id="transactions-heading">Transactions</h2>
+      <h1 id="transactions-heading" className="page-title">
+        Transactions
+      </h1>
       <form
         onSubmit={applyFilters}
         onChange={() => {

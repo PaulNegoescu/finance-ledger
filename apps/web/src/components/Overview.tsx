@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { currentMonthRange } from "@ledger/core/period";
 import { getOverview } from "../server/overview";
 
 type Filters = { accountId?: string; from?: string; to?: string };
@@ -8,6 +9,7 @@ type Props = {
   accounts: { id: string; name: string; currency: string }[];
   revision: number;
   disabled: boolean;
+  currentMonth?: boolean;
 };
 // Avoid floating-point conversion even when a sum exceeds Number.MAX_SAFE_INTEGER.
 function amount(minor: string, currency: string) {
@@ -15,10 +17,16 @@ function amount(minor: string, currency: string) {
   const absolute = value < 0n ? -value : value;
   return `${currency} ${value < 0n ? "-" : ""}${new Intl.NumberFormat("en-GB").format(absolute / 100n)}.${String(absolute % 100n).padStart(2, "0")}`;
 }
-export function Overview({ accounts, revision, disabled }: Props) {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<Filters>({});
-  const [filters, setFilters] = useState<Filters>({});
+export function Overview({
+  accounts,
+  revision,
+  disabled,
+  currentMonth = false,
+}: Props) {
+  const [period] = useState(() => currentMonthRange());
+  const initial = currentMonth ? { from: period.from, to: period.to } : {};
+  const [draft, setDraft] = useState<Filters>(initial);
+  const [filters, setFilters] = useState<Filters>(initial);
   const [result, setResult] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,7 +34,7 @@ export function Overview({ accounts, revision, disabled }: Props) {
   const request = useRef(0);
   useEffect(() => {
     const id = ++request.current;
-    if (disabled || !open) {
+    if (disabled) {
       setResult(null);
       setLoading(false);
       return;
@@ -51,7 +59,7 @@ export function Overview({ accounts, revision, disabled }: Props) {
     return () => {
       if (request.current === id) request.current++;
     };
-  }, [filters, revision, disabled, refresh, open]);
+  }, [filters, revision, disabled, refresh]);
   function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (draft.from && draft.to && draft.from > draft.to) {
@@ -61,14 +69,9 @@ export function Overview({ accounts, revision, disabled }: Props) {
     setFilters({ ...draft });
   }
   return (
-    <section className="panel ledger" aria-labelledby="overview-heading">
-      <details
-        onToggle={(event) => {
-          if (event.target === event.currentTarget)
-            setOpen(event.currentTarget.open);
-        }}
-      >
-        <summary id="overview-heading">Financial overview</summary>
+    <section className="panel" aria-label="Financial overview">
+      {currentMonth && <h1 className="page-title">{period.label}</h1>}
+      {!currentMonth && (
         <form onSubmit={apply}>
           <fieldset disabled={disabled}>
             <div className="transaction-filters">
@@ -135,110 +138,110 @@ export function Overview({ accounts, revision, disabled }: Props) {
             </div>
           </fieldset>
         </form>
-        {error && (
-          <p role="alert" className="notice">
-            {error}{" "}
-            <button
-              type="button"
-              className="secondary"
-              disabled={disabled}
-              onClick={() => setRefresh((value) => value + 1)}
-            >
-              Retry overview
-            </button>
-          </p>
-        )}
-        <div role="status" aria-live="polite">
-          {loading && <p>Loading overview…</p>}
-        </div>
-        {!loading &&
-          result &&
-          (!result.totals.length ? (
-            <p>No transactions match these filters.</p>
-          ) : (
-            <>
+      )}
+      {error && (
+        <p role="alert" className="notice">
+          {error}{" "}
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled}
+            onClick={() => setRefresh((value) => value + 1)}
+          >
+            Retry overview
+          </button>
+        </p>
+      )}
+      <div role="status" aria-live="polite">
+        {loading && <p>Loading overview…</p>}
+      </div>
+      {!loading &&
+        result &&
+        (!result.totals.length ? (
+          <p>No transactions match these filters.</p>
+        ) : (
+          <>
+            <div className="scroll">
+              <table aria-label="Totals by currency">
+                <thead>
+                  <tr>
+                    <th>Currency</th>
+                    <th>Money in</th>
+                    <th>Money out</th>
+                    <th>Net flow</th>
+                    <th>Transactions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.totals.map((row) => (
+                    <tr key={row.currency}>
+                      <td>{row.currency}</td>
+                      <td>{amount(row.incomeMinor, row.currency)}</td>
+                      <td>{amount(row.expenseMinor, row.currency)}</td>
+                      <td>{amount(row.netMinor, row.currency)}</td>
+                      <td>{row.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <details>
+              <summary>Monthly totals and category spending</summary>
+              <h3>Monthly totals</h3>
               <div className="scroll">
-                <table aria-label="Totals by currency">
+                <table aria-label="Monthly totals">
                   <thead>
                     <tr>
+                      <th>Month</th>
                       <th>Currency</th>
                       <th>Money in</th>
                       <th>Money out</th>
                       <th>Net flow</th>
-                      <th>Transactions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {result.totals.map((row) => (
-                      <tr key={row.currency}>
+                    {result.months.map((row) => (
+                      <tr key={`${row.month}-${row.currency}`}>
+                        <td>{row.month}</td>
                         <td>{row.currency}</td>
                         <td>{amount(row.incomeMinor, row.currency)}</td>
                         <td>{amount(row.expenseMinor, row.currency)}</td>
                         <td>{amount(row.netMinor, row.currency)}</td>
-                        <td>{row.count}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <details>
-                <summary>Monthly totals and category spending</summary>
-                <h3>Monthly totals</h3>
+              <h3>Category spending</h3>
+              {!result.categories.length ? (
+                <p>No expenses match these filters.</p>
+              ) : (
                 <div className="scroll">
-                  <table aria-label="Monthly totals">
+                  <table aria-label="Category spending">
                     <thead>
                       <tr>
-                        <th>Month</th>
+                        <th>Category</th>
                         <th>Currency</th>
-                        <th>Money in</th>
                         <th>Money out</th>
-                        <th>Net flow</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {result.months.map((row) => (
-                        <tr key={`${row.month}-${row.currency}`}>
-                          <td>{row.month}</td>
+                      {result.categories.map((row) => (
+                        <tr
+                          key={`${row.currency}-${row.categoryId ?? "uncategorized"}`}
+                        >
+                          <td>{row.category}</td>
                           <td>{row.currency}</td>
-                          <td>{amount(row.incomeMinor, row.currency)}</td>
                           <td>{amount(row.expenseMinor, row.currency)}</td>
-                          <td>{amount(row.netMinor, row.currency)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <h3>Category spending</h3>
-                {!result.categories.length ? (
-                  <p>No expenses match these filters.</p>
-                ) : (
-                  <div className="scroll">
-                    <table aria-label="Category spending">
-                      <thead>
-                        <tr>
-                          <th>Category</th>
-                          <th>Currency</th>
-                          <th>Money out</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.categories.map((row) => (
-                          <tr
-                            key={`${row.currency}-${row.categoryId ?? "uncategorized"}`}
-                          >
-                            <td>{row.category}</td>
-                            <td>{row.currency}</td>
-                            <td>{amount(row.expenseMinor, row.currency)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </details>
-            </>
-          ))}
-      </details>
+              )}
+            </details>
+          </>
+        ))}
     </section>
   );
 }
