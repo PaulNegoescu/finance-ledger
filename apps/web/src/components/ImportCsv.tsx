@@ -20,6 +20,7 @@ export function ImportCsv({
   const [page, setPage] = useState(0);
   async function preview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy || disabled) return;
     const form = new FormData(event.currentTarget);
     setReview(null);
     setPage(0);
@@ -56,7 +57,13 @@ export function ImportCsv({
     }
   }
   async function confirm() {
-    if (!review || review.result.issues.length || !review.result.newCount)
+    if (
+      busy ||
+      disabled ||
+      !review ||
+      review.result.issues.length ||
+      !review.result.newCount
+    )
       return;
     setBusy(true);
     setMessage("");
@@ -74,8 +81,10 @@ export function ImportCsv({
         );
       }
     } catch {
+      // A lost response cannot tell us whether the atomic import committed.
+      setReview(null);
       setMessage(
-        "Import failed. No partial changes were saved. Preview again or check your connection.",
+        "Unable to confirm import. Preview again to check what was saved before retrying.",
       );
     } finally {
       setBusy(false);
@@ -84,9 +93,11 @@ export function ImportCsv({
   const result = review?.result;
   const pageCount = Math.ceil((result?.rows.length ?? 0) / pageSize);
   return (
-    <>
+    <div className="import-workspace">
       <section className="panel">
-        <h2>Import ING CSV</h2>
+        <div className="import-header">
+          <h2>Import ING CSV</h2>
+        </div>
         <form
           onSubmit={preview}
           onChange={() => {
@@ -95,7 +106,7 @@ export function ImportCsv({
             setPage(0);
           }}
         >
-          <fieldset disabled={busy || disabled}>
+          <fieldset className="import-fields" disabled={busy || disabled}>
             <label>
               Account name
               <input
@@ -113,7 +124,7 @@ export function ImportCsv({
                 <option>USD</option>
               </select>
             </label>
-            <label>
+            <label className="import-file">
               CSV file (UTF-8, up to 2 MB)
               <input name="file" type="file" accept=".csv,text/csv" required />
             </label>
@@ -235,6 +246,6 @@ export function ImportCsv({
           </div>
         </section>
       )}
-    </>
+    </div>
   );
 }

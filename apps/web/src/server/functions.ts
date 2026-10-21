@@ -21,10 +21,13 @@ export const listLedger = createServerFn({ method: "GET" }).handler(
   async () => {
     const { getLedger } = await import("./ledger.server");
     try {
-      return { data: await getLedger().list(), unavailable: false as const };
+      return {
+        data: await getLedger().metadata(),
+        unavailable: false as const,
+      };
     } catch {
       return {
-        data: { transactions: [], categories: [], rules: [] },
+        data: { transactions: [], categories: [], rules: [], accounts: [] },
         unavailable: true as const,
       };
     }
