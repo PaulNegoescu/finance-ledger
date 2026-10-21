@@ -29,7 +29,13 @@ export const normalize = (text: string) =>
 
 // Integer minor units only: never parse monetary values through floating point.
 export function money(value: string): number {
-  let text = value.trim().replace(/[\s\u00a0]/g, "");
+  let text = value.trim().replace(/[\u00a0\u202f]/g, " ");
+  // Spaces are permitted only as complete thousands groups, never inside digits.
+  if (text.includes(" ")) {
+    if (!/^-?\d{1,3}( \d{3})+([.,]\d{1,2})?$/.test(text))
+      throw new Error("Invalid thousands grouping in amount.");
+    text = text.replace(/ /g, "");
+  }
   if (/^-?\d{1,3}(\.\d{3})*,\d{2}$/.test(text))
     text = text.replace(/\./g, "").replace(",", ".");
   else if (/^-?\d+,\d{2}$/.test(text)) text = text.replace(",", ".");
@@ -80,37 +86,56 @@ export type CsvReview = {
   rows: (LedgerRow & { sourceRow: number })[];
   issues: CsvIssue[];
 };
+function mapHeaders(headers: string[]) {
+  const mapped = headers.map((h) => aliases[normalize(h)] ?? normalize(h));
+  if (new Set(mapped).size !== mapped.length)
+    throw new Error("duplicate headers");
+  if (
+    !mapped.includes("date") ||
+    !mapped.includes("description") ||
+    (!mapped.includes("amount") &&
+      !(mapped.includes("debit") && mapped.includes("credit")))
+  )
+    throw new Error("headers");
+  if (
+    mapped.includes("amount") &&
+    (mapped.includes("debit") || mapped.includes("credit"))
+  )
+    throw new Error("ambiguous amount columns");
+  return mapped;
+}
+
+function detectDelimiter(csv: string) {
+  // Parse the first logical record for each candidate so quoted punctuation and
+  // multiline fields do not influence delimiter selection.
+  const candidates = [";", ","].filter((delimiter) => {
+    try {
+      const [headers] = parse(csv, {
+        delimiter,
+        to: 1,
+        skip_empty_lines: true,
+        trim: true,
+      }) as string[][];
+      mapHeaders(headers ?? []);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  if (candidates.length !== 1) throw new Error("unknown delimiter or headers");
+  return candidates[0];
+}
+
 export function reviewIngCsv(csv: string, currency: string): CsvReview {
   const clean = csv.replace(/^\uFEFF/, "");
-  const first = clean.split(/\r?\n/)[0] ?? "";
-  const delimiter = first.includes(";") ? ";" : ",";
   let records: { record: Record<string, string>; info: { lines: number } }[];
   try {
     records = parse(clean, {
-      delimiter,
+      delimiter: detectDelimiter(clean),
       info: true,
       skip_empty_lines: true,
       trim: true,
-      columns: (headers: string[]) => {
-        const mapped = headers.map(
-          (h) => aliases[normalize(h)] ?? normalize(h),
-        );
-        if (new Set(mapped).size !== mapped.length)
-          throw new Error("duplicate headers");
-        if (
-          !mapped.includes("date") ||
-          !mapped.includes("description") ||
-          (!mapped.includes("amount") &&
-            !(mapped.includes("debit") && mapped.includes("credit")))
-        )
-          throw new Error("headers");
-        if (
-          mapped.includes("amount") &&
-          (mapped.includes("debit") || mapped.includes("credit"))
-        )
-          throw new Error("ambiguous amount columns");
-        return mapped;
-      },
+      columns: mapHeaders,
     });
   } catch (error) {
     const line = (error as { lines?: number }).lines;

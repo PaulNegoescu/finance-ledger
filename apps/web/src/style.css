@@ -190,7 +190,6 @@ li {
 
 .import-review {
   grid-column: 1 / -1;
-  order: 1;
 }
 .grid {
   align-items: start;
@@ -219,4 +218,35 @@ button.secondary:hover:not(:disabled) {
 
 .grid > * {
   min-width: 0;
+}
+
+.transaction-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+.management-list {
+  list-style: none;
+  padding: 0;
+}
+.management-list > li {
+  padding: 12px 0;
+  border-bottom: 1px solid #dce7eb;
+}
+.management-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.management-row .actions {
+  margin-top: 0;
+}
+.management-row button {
+  padding: 6px 10px;
+}
+.rule-manager {
+  max-height: 760px;
+  overflow-y: auto;
 }

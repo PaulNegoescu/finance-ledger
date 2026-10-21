@@ -74,13 +74,13 @@ Formatul este un adaptor explicit testat pe date sintetice, **nu încă verifica
 
 Întregul fișier este validat înainte de salvare; toate scrierile unui import sunt atomice. CSV-ul brut nu este stocat. Baza păstrează hash-ul importului, tranzacțiile normalizate și proveniența categoriei. Același CSV pe același cont nu este reimportat. Exporturile suprapuse sunt deduplicate după dată, descriere normalizată, sumă, valută, referință și numărul apariției identice în fișier. Acest număr păstrează tranzacții identice legitime din același export; fără o referință bancară stabilă, exporturile parțiale cu tranzacții identice rămân ambigue. Verifică-le manual; nu tratăm această euristică drept identificator bancar garantat.
 
-Regulile sunt potriviri de subșir fără diferențe de majuscule/diacritice. Ordinea este `priority ASC, id ASC`; valoarea implicită a priorității este 100. Prima regulă câștigă. Regulile afectează doar importuri viitoare, iar reimportul nu suprascrie categoriile manuale. Cazurile fără potrivire rămân de clasificat. Interfața listează ultimele maximum 500 de tranzacții; filtrul de necategorisite se aplică acelei liste.
+Regulile sunt potriviri de subșir fără diferențe de majuscule/diacritice. Ordinea este `priority ASC, id ASC`; valoarea implicită a priorității este 100. Prima regulă câștigă. Modificările regulilor afectează importuri viitoare; aplicarea pe tranzacții existente se declanșează explicit doar pentru cele necategorisite. Reimportul nu suprascrie categoriile manuale. Cazurile fără potrivire rămân de clasificat. Interfața paginează toate tranzacțiile și aplică filtrele pe întregul registru.
 
 ## Date și următorii pași
 
 `.env`, importurile și backup-urile sunt ignorate în Git și excluse din imagine. Păstrează exporturile reale în afara repository-ului. Nu pune secrete în variabile `VITE_*`, deoarece acestea ajung în browser. Baza și volumul conțin date sensibile și au nevoie de backup și protecție locală.
 
-Etape următoare: validarea profilului ING pe structură anonimizată, preview și erori pe rând în UI, editare/prioritizare reguli, paginare și rapoarte, autentificare pentru acces nelocal. PDF este intenționat amânat. Categorisirea rămâne deterministă și manuală.
+Etape următoare: validarea profilului ING pe structură anonimizată, rapoarte, autentificare pentru acces nelocal. PDF este intenționat amânat. Categorisirea rămâne deterministă și manuală.
 
 Configurarea TanStack Start urmează [ghidul oficial](https://tanstack.com/start/latest/docs/framework/react/build-from-scratch) și [integrarea Nitro](https://tanstack.com/start/latest/docs/framework/react/guide/hosting). Versiunile rezolvate sunt fixate în lockfile.
 
@@ -102,3 +102,23 @@ of the initial profile described above.
 
 Use `fixtures/ing-synthetic-errors.csv` to check multiple row errors without real banking
 data; `fixtures/ing-synthetic.csv` demonstrates valid imports and duplicate-only previews.
+
+## Transaction and rule management
+
+Transactions now use server-side pagination (25 rows per page) with exact counts,
+rather than limiting the ledger to the latest 500 rows. Apply search, account,
+category, uncategorized and inclusive date filters across the full ledger. Search
+matches a literal, case-insensitive description substring; `%` and `_` are not
+wildcards. Filters reset the page, and a shortened result set clamps to its last page.
+
+Categories can be renamed, and unused categories can be deleted. Rules can be edited,
+prioritized or removed. Lower priority numbers win; ties use the existing stable ID
+order. Changes affect future imports. Use **Apply rules to uncategorized** explicitly
+to categorize existing unassigned transactions. Manual assignments and existing rule
+assignments remain untouched. Deleting a rule retains historical transaction categories
+and source labels, while clearing the deleted rule reference. Categories still in use
+by transactions or rules cannot be deleted.
+
+CSV validation also rejects malformed internal amount spacing and correctly recognizes
+quoted delimiters in headers. After an uncertain confirmation response, preview again
+to check what was saved instead of assuming the import failed.

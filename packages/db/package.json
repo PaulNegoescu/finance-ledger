@@ -5,19 +5,22 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./queries": "./src/queries.ts",
+    "./rule-management": "./src/rule-management.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "generate": "drizzle-kit generate",
     "migrate": "tsx src/migrate.ts",
-    "test:integration": "vitest run src/ledger.integration.test.ts"
+    "test:integration": "vitest run src/*.integration.test.ts"
   },
   "dependencies": {
     "@ledger/core": "workspace:*",
     "drizzle-orm": "^0.44.0",
-    "postgres": "^3.4.0"
+    "postgres": "^3.4.0",
+    "zod": "^4.1.0"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.0",

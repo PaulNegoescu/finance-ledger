@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { importCsv, previewCsv } from "../server/functions";
 
 type Review = Awaited<ReturnType<typeof previewCsv>>;
@@ -8,7 +8,9 @@ const pageSize = 25;
 export function ImportCsv({
   disabled,
   onImported,
+  children,
 }: {
+  children?: ReactNode;
   disabled: boolean;
   onImported: () => Promise<void>;
 }) {
@@ -20,6 +22,7 @@ export function ImportCsv({
   const [page, setPage] = useState(0);
   async function preview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy || disabled) return;
     const form = new FormData(event.currentTarget);
     setReview(null);
     setPage(0);
@@ -56,7 +59,13 @@ export function ImportCsv({
     }
   }
   async function confirm() {
-    if (!review || review.result.issues.length || !review.result.newCount)
+    if (
+      busy ||
+      disabled ||
+      !review ||
+      review.result.issues.length ||
+      !review.result.newCount
+    )
       return;
     setBusy(true);
     setMessage("");
@@ -74,8 +83,10 @@ export function ImportCsv({
         );
       }
     } catch {
+      // A lost response cannot tell us whether the atomic import committed.
+      setReview(null);
       setMessage(
-        "Import failed. No partial changes were saved. Preview again or check your connection.",
+        "Unable to confirm import. Preview again to check what was saved before retrying.",
       );
     } finally {
       setBusy(false);
@@ -84,7 +95,7 @@ export function ImportCsv({
   const result = review?.result;
   const pageCount = Math.ceil((result?.rows.length ?? 0) / pageSize);
   return (
-    <>
+    <div className="grid">
       <section className="panel">
         <h2>Import ING CSV</h2>
         <form
@@ -124,6 +135,7 @@ export function ImportCsv({
           {message && <p>{message}</p>}
         </div>
       </section>
+      {children}
       {review && result && (
         <section className="panel import-review">
           <h2>Review import</h2>
@@ -235,6 +247,6 @@ export function ImportCsv({
           </div>
         </section>
       )}
-    </>
+    </div>
   );
 }

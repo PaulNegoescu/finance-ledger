@@ -77,3 +77,43 @@ describe("CSV review", () => {
     expect(reviewIngCsv(header, "RON").issues[0].row).toBeNull();
   });
 });
+
+describe("CSV parsing safeguards", () => {
+  it("detects comma separators when a quoted extra header contains a semicolon", () => {
+    const result = reviewIngCsv(
+      'Date,Description,Amount,Currency,"Extra;note"\n2026-10-01,Demo,-12.34,RON,ignored',
+      "RON",
+    );
+    expect(result.issues).toEqual([]);
+    expect(result.rows[0].amountMinor).toBe(-1234);
+  });
+  it("detects semicolon separators with a quoted comma in an extra header", () => {
+    const result = reviewIngCsv(
+      'Date;Description;Amount;Currency;"Extra,note"\n2026-10-01;Demo;-12,34;RON;ignored',
+      "RON",
+    );
+    expect(result.issues).toEqual([]);
+    expect(result.rows[0].amountMinor).toBe(-1234);
+  });
+  it("detects a logical multiline header and preserves physical row numbers", () => {
+    const result = reviewIngCsv(
+      'Date,Description,Amount,"Extra;\nheader"\n2026-10-01,Demo,-1.00,ignored',
+      "RON",
+    );
+    expect(result.issues).toEqual([]);
+    expect(result.rows[0].sourceRow).toBe(3);
+  });
+  it.each(["1 2", "12 34,56", "1\t2", "1\n2", "1 234 56", "1 234.567,89"])(
+    "rejects malformed grouping instead of joining digits: %s",
+    (value) => {
+      expect(() => money(value)).toThrow();
+    },
+  );
+  it("accepts complete thousands groups with regular and nonbreaking spaces", () => {
+    expect(money("1 234 567,89")).toBe(123456789);
+    expect(money("-1\u00a0234,56")).toBe(-123456);
+    expect(money("1\u202f234.56")).toBe(123456);
+    expect(money("9 999 999 999,99")).toBe(999999999999);
+    expect(() => money("10 000 000 000,00")).toThrow("too large");
+  });
+});

@@ -22,7 +22,25 @@ export function createLedger(url: string) {
       await db.execute(sql`select 1`);
       return { ok: true };
     },
+    metadata: async () => ({
+      accounts: await db
+        .select()
+        .from(schema.accounts)
+        .orderBy(schema.accounts.name),
+      categories: await db
+        .select()
+        .from(schema.categories)
+        .orderBy(schema.categories.name),
+      rules: await db
+        .select()
+        .from(schema.rules)
+        .orderBy(schema.rules.priority, schema.rules.id),
+    }),
     list: async () => ({
+      accounts: await db
+        .select()
+        .from(schema.accounts)
+        .orderBy(schema.accounts.name),
       transactions: await db
         .select({
           ...getTableColumns(schema.transactions),
