@@ -30,6 +30,82 @@ describe.skipIf(!url)(
     afterAll(async () => {
       await ledger?.close();
     });
+    it("uses account IDs authoritatively and rejects stale or duplicate creation", async () => {
+      const name = `${prefix}-identity`;
+      await ledger.importCsv({
+        account: name,
+        currency: "RON",
+        csv,
+        createAccount: true,
+      });
+      const account = (await ledger.list()).accounts.find(
+        (item) => item.name === name,
+      )!;
+      const nextCsv = csv.replace("01.10.2026", "02.10.2026");
+      await ledger.importCsv({
+        accountId: account.id,
+        account: `${name}-wrong-name`,
+        currency: "RON",
+        csv: nextCsv,
+      });
+      expect(
+        (await ledger.list()).accounts.some(
+          (item) => item.name === `${name}-wrong-name`,
+        ),
+      ).toBe(false);
+      expect(
+        (
+          await ledger.previewCsv({
+            accountId: account.id,
+            account: "Ignored",
+            currency: "RON",
+            csv: nextCsv,
+          })
+        ).duplicateCount,
+      ).toBe(1);
+      const stale = {
+        accountId: randomUUID(),
+        account: `${name}-missing`,
+        currency: "RON",
+        csv,
+      };
+      expect(
+        (await ledger.previewCsv(stale)).issues.some((issue) =>
+          issue.message.includes("no longer exists"),
+        ),
+      ).toBe(true);
+      await expect(ledger.importCsv(stale)).rejects.toThrow("not found");
+      const duplicate = {
+        account: name.toUpperCase(),
+        currency: "RON",
+        csv,
+        createAccount: true,
+      };
+      expect(
+        (await ledger.previewCsv(duplicate)).issues.some((issue) =>
+          issue.message.includes("already exists"),
+        ),
+      ).toBe(true);
+      await expect(ledger.importCsv(duplicate)).rejects.toThrow(
+        "already exists",
+      );
+      const create = {
+        account: `${prefix}-race`,
+        currency: "RON",
+        csv,
+        createAccount: true,
+      };
+      const attempts = await Promise.allSettled([
+        ledger.importCsv(create),
+        ledger.importCsv({ ...create, account: create.account.toUpperCase() }),
+      ]);
+      expect(
+        attempts.filter((result) => result.status === "fulfilled"),
+      ).toHaveLength(1);
+      expect(
+        attempts.filter((result) => result.status === "rejected"),
+      ).toHaveLength(1);
+    });
     it("previews without writes and rechecks duplicates on confirmation", async () => {
       const account = `${prefix}-preview`;
       const input = { account, currency: "RON", csv };

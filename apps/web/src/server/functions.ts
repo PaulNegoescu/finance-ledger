@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
-  importInput,
+  importRequest,
   categoryInput,
   assignmentInput,
   ruleInput,
@@ -34,13 +34,13 @@ export const listLedger = createServerFn({ method: "GET" }).handler(
   },
 );
 export const previewCsv = createServerFn({ method: "POST" })
-  .validator(importInput)
+  .validator(importRequest)
   .handler(async ({ data }) => {
     const { getLedger } = await import("./ledger.server");
     return safeWrite(() => getLedger().previewCsv(data));
   });
 export const importCsv = createServerFn({ method: "POST" })
-  .validator(importInput)
+  .validator(importRequest)
   .handler(async ({ data }) => {
     const { getLedger } = await import("./ledger.server");
     return safeWrite(() => getLedger().importCsv(data));

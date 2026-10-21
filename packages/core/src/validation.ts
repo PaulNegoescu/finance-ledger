@@ -2,8 +2,21 @@ import { z } from "zod";
 export const importInput = z.object({
   account: z.string().trim().min(1).max(100),
   currency: z.string().regex(/^[A-Z]{3}$/),
-  csv: z.string().min(1).max(2_000_000),
+  accountId: z.uuid().optional(),
+  createAccount: z.boolean().optional(),
+  csv: z
+    .string()
+    .min(1)
+    .max(2_000_000)
+    .refine(
+      (value) => new TextEncoder().encode(value).byteLength <= 2_000_000,
+      "CSV must not exceed 2 MB.",
+    ),
 });
+export const importRequest = importInput.refine(
+  (value) => Boolean(value.accountId) !== Boolean(value.createAccount),
+  "Select an existing account or explicitly create a new one.",
+);
 export const categoryInput = z.object({
   name: z.string().trim().min(1).max(80),
 });

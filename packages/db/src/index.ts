@@ -13,6 +13,9 @@ import {
 } from "@ledger/core";
 import * as schema from "./schema";
 
+const accountKey = (name: string) =>
+  name.normalize("NFKC").trim().toLowerCase();
+
 export function createLedger(url: string) {
   const client = postgres(url, { max: 5, onnotice: () => {} });
   const db = drizzle(client, { schema });
@@ -68,7 +71,31 @@ export function createLedger(url: string) {
       const [account] = await db
         .select()
         .from(schema.accounts)
-        .where(eq(schema.accounts.name, data.account));
+        .where(
+          data.accountId
+            ? eq(schema.accounts.id, data.accountId)
+            : eq(schema.accounts.name, data.account),
+        );
+      if (data.accountId && !account)
+        review.issues.push({
+          row: null,
+          message: "The selected account no longer exists.",
+        });
+      if (data.createAccount) {
+        const names = await db
+          .select({ name: schema.accounts.name })
+          .from(schema.accounts);
+        if (
+          names.some(
+            (item) => accountKey(item.name) === accountKey(data.account),
+          )
+        )
+          review.issues.push({
+            row: null,
+            message:
+              "An account with this name already exists. Select the existing account.",
+          });
+      }
       if (account && account.currency !== data.currency)
         review.issues.push({
           row: null,
@@ -107,14 +134,33 @@ export function createLedger(url: string) {
       return db.transaction(async (tx) => {
         // Serialize imports, including account creation and overlapping exports.
         await tx.execute(sql`select pg_advisory_xact_lock(674321)`);
-        await tx
-          .insert(schema.accounts)
-          .values({ name: data.account, currency: data.currency })
-          .onConflictDoNothing();
+        if (data.accountId && data.createAccount)
+          throw new Error("Conflicting account selection.");
+        if (data.createAccount) {
+          const names = await tx
+            .select({ name: schema.accounts.name })
+            .from(schema.accounts);
+          if (
+            names.some(
+              (item) => accountKey(item.name) === accountKey(data.account),
+            )
+          )
+            throw new Error("An account with this name already exists.");
+        }
+        if (!data.accountId)
+          await tx
+            .insert(schema.accounts)
+            .values({ name: data.account, currency: data.currency })
+            .onConflictDoNothing();
         const [account] = await tx
           .select()
           .from(schema.accounts)
-          .where(eq(schema.accounts.name, data.account));
+          .where(
+            data.accountId
+              ? eq(schema.accounts.id, data.accountId)
+              : eq(schema.accounts.name, data.account),
+          );
+        if (!account) throw new Error("Selected account not found.");
         if (account.currency !== data.currency)
           throw new Error("Contul existent are altă valută.");
         const [batch] = await tx
