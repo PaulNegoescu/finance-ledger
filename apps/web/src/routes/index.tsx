@@ -24,7 +24,11 @@ function Home() {
           Transactions are unavailable. Check the database connection.
         </p>
       )}
-      <ImportCsv disabled={unavailable} onImported={refresh} />
+      <ImportCsv
+        accounts={data.accounts}
+        disabled={unavailable}
+        onImported={refresh}
+      />
       <div className="home-overview">
         <Overview
           accounts={data.accounts}
