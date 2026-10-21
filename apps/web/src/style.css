@@ -187,3 +187,36 @@ li {
     gap: 0 20px;
   }
 }
+
+.import-review {
+  grid-column: 1 / -1;
+  order: 1;
+}
+.grid {
+  align-items: start;
+}
+.import-review .scroll {
+  max-height: 420px;
+}
+.import-errors {
+  max-height: 240px;
+  overflow: auto;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+button.secondary {
+  color: #155e63;
+  background: #fff;
+}
+button.secondary:hover:not(:disabled) {
+  background: #edf5f7;
+}
+
+.grid > * {
+  min-width: 0;
+}

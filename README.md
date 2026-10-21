@@ -83,3 +83,22 @@ Regulile sunt potriviri de subșir fără diferențe de majuscule/diacritice. Or
 Etape următoare: validarea profilului ING pe structură anonimizată, preview și erori pe rând în UI, editare/prioritizare reguli, paginare și rapoarte, autentificare pentru acces nelocal. PDF este intenționat amânat. Categorisirea rămâne deterministă și manuală.
 
 Configurarea TanStack Start urmează [ghidul oficial](https://tanstack.com/start/latest/docs/framework/react/build-from-scratch) și [integrarea Nitro](https://tanstack.com/start/latest/docs/framework/react/guide/hosting). Versiunile rezolvate sunt fixate în lockfile.
+
+## CSV review before import
+
+The import form now requires **Preview import** followed by **Confirm import**.
+Preview does not create accounts, import records or transactions. It lists parsed
+transactions (25 per page), identifies rows already present in the selected account,
+and reports validation errors by CSV line. For quoted multiline records, the reported
+line is the record's ending physical line. File/header errors are shown separately.
+
+Any error blocks the entire import. Valid rows can still be reviewed, but no partial
+import is offered. Fix the file and preview again. Changing the file, account or currency
+clears the preview; cancel discards it. The browser holds the reviewed CSV only in memory.
+Confirmation reparses the file and rechecks duplicates inside the existing atomic import,
+so another import between preview and confirmation cannot create duplicates. Counts can
+therefore change at confirmation. Reference-free deduplication retains the limitations
+of the initial profile described above.
+
+Use `fixtures/ing-synthetic-errors.csv` to check multiple row errors without real banking
+data; `fixtures/ing-synthetic.csv` demonstrates valid imports and duplicate-only previews.

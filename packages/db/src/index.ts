@@ -1,11 +1,12 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { desc, eq, sql, getTableColumns } from "drizzle-orm";
+import { desc, eq, and, inArray, sql, getTableColumns } from "drizzle-orm";
 import {
   categorize,
   hash,
   importInput,
   parseIngCsv,
+  reviewIngCsv,
   categoryInput,
   assignmentInput,
   ruleInput,
@@ -43,6 +44,45 @@ export function createLedger(url: string) {
         .from(schema.rules)
         .orderBy(schema.rules.priority, schema.rules.id),
     }),
+    previewCsv: async (input: unknown) => {
+      const data = importInput.parse(input);
+      const review = reviewIngCsv(data.csv, data.currency);
+      const [account] = await db
+        .select()
+        .from(schema.accounts)
+        .where(eq(schema.accounts.name, data.account));
+      if (account && account.currency !== data.currency)
+        review.issues.push({
+          row: null,
+          message: "This account uses a different currency.",
+        });
+      const existing =
+        account && review.rows.length
+          ? await db
+              .select({ fingerprint: schema.transactions.fingerprint })
+              .from(schema.transactions)
+              .where(
+                and(
+                  eq(schema.transactions.accountId, account.id),
+                  inArray(
+                    schema.transactions.fingerprint,
+                    review.rows.map((r) => r.fingerprint),
+                  ),
+                ),
+              )
+          : [];
+      const known = new Set(existing.map((r) => r.fingerprint));
+      const rows = review.rows.map(({ fingerprint, ...row }) => ({
+        ...row,
+        duplicate: known.has(fingerprint),
+      }));
+      return {
+        rows,
+        issues: review.issues,
+        newCount: rows.filter((r) => !r.duplicate).length,
+        duplicateCount: rows.filter((r) => r.duplicate).length,
+      };
+    },
     importCsv: async (input: unknown) => {
       const data = importInput.parse(input);
       const rows = parseIngCsv(data.csv, data.currency);
