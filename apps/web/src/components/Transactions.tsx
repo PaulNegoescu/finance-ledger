@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { assignBulkCategories } from "../server/bulk-categories";
 import { assignCategory } from "../server/functions";
 import { listTransactions } from "../server/transactions";
 
@@ -39,6 +40,16 @@ export function Transactions({
   const [message, setMessage] = useState("");
   const [refresh, setRefresh] = useState(0);
   const request = useRef(0);
+  const mutation = useRef(false);
+  const selectAll = useRef<HTMLInputElement>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkCategory, setBulkCategory] = useState("");
+  useEffect(() => {
+    if (selectAll.current)
+      selectAll.current.indeterminate =
+        selected.length > 0 &&
+        selected.length < (result?.transactions.length ?? 0);
+  }, [selected, result, loading]);
 
   useEffect(() => {
     setQuery((current) =>
@@ -49,6 +60,8 @@ export function Transactions({
   useEffect(() => {
     const id = ++request.current;
     setLoading(true);
+    setSelected([]);
+    setBulkCategory("");
     setError("");
     setLoadError(false);
     void listTransactions({
@@ -86,6 +99,8 @@ export function Transactions({
       return;
     }
     setMessage("");
+    setSelected([]);
+    setBulkCategory("");
     setQuery({
       filters: {
         ...draft,
@@ -97,7 +112,8 @@ export function Transactions({
   }
 
   async function assign(id: string, categoryId: string | null) {
-    if (disabled || saving) return;
+    if (disabled || saving || mutation.current) return;
+    mutation.current = true;
     setSaving(true);
     setMessage("");
     setError("");
@@ -117,6 +133,61 @@ export function Transactions({
     } finally {
       if (saved) setRefresh((value) => value + 1);
       setSaving(false);
+      mutation.current = false;
+    }
+  }
+
+  async function assignSelected() {
+    if (
+      disabled ||
+      saving ||
+      loading ||
+      loadError ||
+      mutation.current ||
+      !selected.length ||
+      !bulkCategory ||
+      !result
+    )
+      return;
+    if (
+      selected.some((id) => !result.transactions.some((row) => row.id === id))
+    ) {
+      setSelected([]);
+      return;
+    }
+    mutation.current = true;
+    setSaving(true);
+    setError("");
+    setLoadError(false);
+    setMessage("");
+    let saved = false;
+    try {
+      const response = await assignBulkCategories({
+        data: {
+          ids: selected,
+          categoryId: bulkCategory === "__clear__" ? null : bulkCategory,
+        },
+      });
+      saved = true;
+      setSelected([]);
+      setBulkCategory("");
+      setMessage(`${response.updated} transactions updated.`);
+      await onAssigned();
+    } catch {
+      if (saved)
+        setMessage(
+          "Selected transactions updated. Refresh the page if other data is out of date.",
+        );
+      else {
+        setSelected([]);
+        setMessage(
+          "Unable to confirm the bulk update. Review the refreshed transactions before trying again.",
+        );
+      }
+    } finally {
+      setRefresh((value) => value + 1);
+      setSaving(false);
+      mutation.current = false;
     }
   }
 
@@ -132,7 +203,13 @@ export function Transactions({
   return (
     <section className="panel ledger" aria-labelledby="transactions-heading">
       <h2 id="transactions-heading">Transactions</h2>
-      <form onSubmit={applyFilters}>
+      <form
+        onSubmit={applyFilters}
+        onChange={() => {
+          setSelected([]);
+          setBulkCategory("");
+        }}
+      >
         <fieldset disabled={locked}>
           <div className="transaction-filters">
             <label>
@@ -244,6 +321,8 @@ export function Transactions({
               type="button"
               className="secondary"
               onClick={() => {
+                setSelected([]);
+                setBulkCategory("");
                 setDraft(emptyFilters);
                 setQuery({ filters: emptyFilters, page: 1 });
                 setMessage("");
@@ -278,6 +357,47 @@ export function Transactions({
           </p>
         )}
       </div>
+      {!loading &&
+        !loadError &&
+        selected.length > 0 &&
+        !!result?.transactions.length && (
+          <div className="bulk-controls">
+            <p role="status">{selected.length} selected on this page</p>
+            <fieldset className="actions" disabled={locked || !selected.length}>
+              <select
+                aria-label="Category for selected transactions"
+                value={bulkCategory}
+                onChange={(event) => setBulkCategory(event.target.value)}
+                style={{ width: "auto", marginTop: 0 }}
+              >
+                <option value="">Choose category</option>
+                <option value="__clear__">Clear category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={locked || !selected.length || !bulkCategory}
+                onClick={() => void assignSelected()}
+              >
+                Apply to selected
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  setSelected([]);
+                  setBulkCategory("");
+                }}
+              >
+                Clear selection
+              </button>
+            </fieldset>
+          </div>
+        )}
       <div aria-busy={loading}>
         {!loading &&
           !loadError &&
@@ -289,6 +409,27 @@ export function Transactions({
               <table aria-label="Transactions">
                 <thead>
                   <tr>
+                    <th scope="col">
+                      <input
+                        ref={selectAll}
+                        type="checkbox"
+                        aria-label="Select all transactions on this page"
+                        disabled={locked || loading}
+                        checked={
+                          !!result.transactions.length &&
+                          selected.length === result.transactions.length
+                        }
+                        onChange={(event) =>
+                          setSelected(
+                            event.target.checked
+                              ? result.transactions.map(
+                                  (transaction) => transaction.id,
+                                )
+                              : [],
+                          )
+                        }
+                      />
+                    </th>
                     <th scope="col">Date / account</th>
                     <th scope="col">Description</th>
                     <th scope="col">Amount</th>
@@ -299,6 +440,23 @@ export function Transactions({
                 <tbody>
                   {result.transactions.map((transaction) => (
                     <tr key={transaction.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${transaction.description} on ${transaction.date} in ${transaction.account}`}
+                          checked={selected.includes(transaction.id)}
+                          disabled={locked || loading}
+                          onChange={(event) =>
+                            setSelected((current) =>
+                              event.target.checked
+                                ? Array.from(
+                                    new Set([...current, transaction.id]),
+                                  )
+                                : current.filter((id) => id !== transaction.id),
+                            )
+                          }
+                        />
+                      </td>
                       <td>
                         {transaction.date}
                         <small>{transaction.account}</small>
@@ -351,9 +509,11 @@ export function Transactions({
             type="button"
             className="secondary"
             disabled={locked || loading || loadError || result.page <= 1}
-            onClick={() =>
-              setQuery((current) => ({ ...current, page: result.page - 1 }))
-            }
+            onClick={() => {
+              setSelected([]);
+              setBulkCategory("");
+              setQuery((current) => ({ ...current, page: result.page - 1 }));
+            }}
           >
             Previous
           </button>
@@ -366,9 +526,11 @@ export function Transactions({
             disabled={
               locked || loading || loadError || result.page >= totalPages
             }
-            onClick={() =>
-              setQuery((current) => ({ ...current, page: result.page + 1 }))
-            }
+            onClick={() => {
+              setSelected([]);
+              setBulkCategory("");
+              setQuery((current) => ({ ...current, page: result.page + 1 }));
+            }}
           >
             Next
           </button>

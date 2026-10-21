@@ -352,3 +352,52 @@ button.header-link:hover:not(:disabled) {
   color: #0b4549;
   border: 0;
 }
+
+.reports {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.reports > .panel {
+  padding: 16px 20px;
+  margin-top: 0;
+  min-width: 0;
+}
+.reports > details[open],
+.reports > .panel:has(> details[open]) {
+  grid-column: 1 / -1;
+}
+.reports summary {
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+.reports details[open] > summary {
+  margin-bottom: 20px;
+}
+.history-content {
+  margin-top: 16px;
+}
+.bulk-actions {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+}
+.bulk-actions label {
+  margin-bottom: 0;
+}
+@media (max-width: 520px) {
+  .reports {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.bulk-controls {
+  margin: 16px 0;
+}
+.bulk-controls .actions {
+  margin-top: 0;
+}

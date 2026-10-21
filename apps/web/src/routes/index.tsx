@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { ImportCsv } from "../components/ImportCsv";
+import { Overview } from "../components/Overview";
+import { ImportHistory } from "../components/ImportHistory";
 import { Transactions } from "../components/Transactions";
 import { RuleManager } from "../components/RuleManager";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -33,6 +35,18 @@ function Home() {
         </p>
       )}
       <ImportCsv disabled={unavailable} onImported={refresh} />
+      <div className="reports">
+        <Overview
+          accounts={data.accounts}
+          revision={revision}
+          disabled={unavailable}
+        />
+        <ImportHistory
+          accounts={data.accounts}
+          revision={revision}
+          disabled={unavailable}
+        />
+      </div>
       <Transactions
         categories={data.categories}
         accounts={data.accounts}
