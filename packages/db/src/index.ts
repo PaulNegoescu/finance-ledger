@@ -5,8 +5,7 @@ import {
   categorize,
   hash,
   importInput,
-  parseIngCsv,
-  reviewIngCsv,
+  reviewImport,
   categoryInput,
   assignmentInput,
   ruleInput,
@@ -67,7 +66,12 @@ export function createLedger(url: string) {
     }),
     previewCsv: async (input: unknown) => {
       const data = importInput.parse(input);
-      const review = reviewIngCsv(data.csv, data.currency);
+      const review = await reviewImport({
+        adapterId: data.adapterId,
+        format: data.format,
+        content: data.csv,
+        currency: data.currency,
+      });
       const [account] = await db
         .select()
         .from(schema.accounts)
@@ -130,7 +134,15 @@ export function createLedger(url: string) {
     },
     importCsv: async (input: unknown) => {
       const data = importInput.parse(input);
-      const rows = parseIngCsv(data.csv, data.currency);
+      const review = await reviewImport({
+        adapterId: data.adapterId,
+        format: data.format,
+        content: data.csv,
+        currency: data.currency,
+      });
+      if (review.issues.length)
+        throw new Error("Import contains validation errors.");
+      const rows = review.rows.map(({ sourceRow, ...row }) => row);
       return db.transaction(async (tx) => {
         // Serialize imports, including account creation and overlapping exports.
         await tx.execute(sql`select pg_advisory_xact_lock(674321)`);

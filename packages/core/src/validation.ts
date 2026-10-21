@@ -1,5 +1,7 @@
 import { z } from "zod";
 export const importInput = z.object({
+  adapterId: z.string().min(1).max(80).default("ing"),
+  format: z.string().min(1).max(40).default("csv"),
   account: z.string().trim().min(1).max(100),
   currency: z.string().regex(/^[A-Z]{3}$/),
   accountId: z.uuid().optional(),

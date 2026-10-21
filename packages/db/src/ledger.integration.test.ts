@@ -3,6 +3,7 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { createLedger } from "./index";
 
@@ -105,6 +106,54 @@ describe.skipIf(!url)(
       expect(
         attempts.filter((result) => result.status === "rejected"),
       ).toHaveLength(1);
+    });
+    it("routes grouped ING CSV through the adapter and rejects unsupported formats without writes", async () => {
+      const input = {
+        account: `${prefix}-grouped`,
+        currency: "RON",
+        createAccount: true,
+        adapterId: "ing",
+        format: "csv",
+        csv: readFileSync(
+          new URL(
+            "../../../fixtures/ing-grouped-synthetic.csv",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      };
+      const preview = await ledger.previewCsv(input);
+      expect(preview.issues).toEqual([]);
+      expect(preview.newCount).toBe(3);
+      expect(preview.rows.map((row) => row.amountMinor)).toEqual([
+        -12550, 12550, -4725,
+      ]);
+      expect(await ledger.importCsv(input)).toEqual({
+        inserted: 3,
+        skipped: 0,
+      });
+      const account = (await ledger.list()).accounts.find(
+        (row) => row.name === input.account,
+      )!;
+      expect(
+        await ledger.importCsv({
+          ...input,
+          accountId: account.id,
+          createAccount: false,
+        }),
+      ).toEqual({ inserted: 0, skipped: 3 });
+      const unsupported = {
+        ...input,
+        account: `${prefix}-unsupported`,
+        format: "pdf",
+      };
+      expect((await ledger.previewCsv(unsupported)).issues).toHaveLength(1);
+      await expect(ledger.importCsv(unsupported)).rejects.toThrow("validation");
+      expect(
+        (await ledger.list()).accounts.some(
+          (row) => row.name === unsupported.account,
+        ),
+      ).toBe(false);
     });
     it("previews without writes and rechecks duplicates on confirmation", async () => {
       const account = `${prefix}-preview`;
