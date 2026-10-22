@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import {
   cashflowAmount,
   cashflowRatio,
+  cashflowTick,
   cashflowYear,
   type CashflowMonth,
 } from "./cashflow-data";
@@ -143,10 +144,7 @@ function CurrencyChart({
                   y={y + 4}
                   textAnchor="end"
                 >
-                  {new Intl.NumberFormat("en-GB", {
-                    notation: "compact",
-                    maximumFractionDigits: 1,
-                  }).format(minor / 100n)}
+                  {cashflowTick(minor)}
                 </text>
               </g>
             );
@@ -167,11 +165,7 @@ function CurrencyChart({
               y={bottom + 4}
               textAnchor="end"
             >
-              −
-              {new Intl.NumberFormat("en-GB", {
-                notation: "compact",
-                maximumFractionDigits: 1,
-              }).format(maximum / 100n)}
+              −{cashflowTick(maximum)}
             </text>
           )}
           {rows.map((row, index) => {

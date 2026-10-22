@@ -3,6 +3,7 @@ import {
   cashflowAmount,
   cashflowPeriod,
   cashflowRatio,
+  cashflowTick,
   cashflowYear,
 } from "../../../apps/web/src/components/cashflow-data";
 it("scales arbitrarily large amounts without unsafe numeric conversion", () => {
@@ -10,6 +11,8 @@ it("scales arbitrarily large amounts without unsafe numeric conversion", () => {
   expect(cashflowRatio(huge / 2n, huge)).toBe(0.5);
   expect(cashflowRatio(-huge, huge)).toBe(-1);
   expect(cashflowRatio(0n, 0n)).toBe(0);
+  expect(cashflowTick(99n)).toBe("0.99");
+  expect(cashflowTick(1050n)).toBe("10.50");
   expect(cashflowAmount("-900719925474099301", "RON")).toBe(
     "RON −9,007,199,254,740,993.01",
   );

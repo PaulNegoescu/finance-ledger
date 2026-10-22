@@ -13,6 +13,18 @@ export function cashflowAmount(minor: string, currency: string) {
   return `${currency} ${value < 0n ? "−" : ""}${new Intl.NumberFormat("en-GB").format(absolute / 100n)}.${String(absolute % 100n).padStart(2, "0")}`;
 }
 
+export function cashflowTick(minor: bigint) {
+  if (minor < 100_000n) {
+    const whole = new Intl.NumberFormat("en-GB").format(minor / 100n);
+    const fraction = minor % 100n;
+    return fraction ? `${whole}.${String(fraction).padStart(2, "0")}` : whole;
+  }
+  return new Intl.NumberFormat("en-GB", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(minor / 100n);
+}
+
 // Convert only the bounded ratio to Number; totals may exceed safe integer range.
 export function cashflowRatio(value: bigint, maximum: bigint) {
   if (maximum <= 0n) return 0;
