@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ComparisonRouteImport } from './routes/comparison'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as ImportsRouteImport } from './routes/imports'
 import { Route as OverviewRouteImport } from './routes/overview'
@@ -18,6 +19,11 @@ import { Route as TransactionsRouteImport } from './routes/transactions'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComparisonRoute = ComparisonRouteImport.update({
+  id: '/comparison',
+  path: '/comparison',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthRoute = HealthRouteImport.update({
@@ -43,6 +49,7 @@ const TransactionsRoute = TransactionsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/comparison': typeof ComparisonRoute
   '/health': typeof HealthRoute
   '/imports': typeof ImportsRoute
   '/overview': typeof OverviewRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/comparison': typeof ComparisonRoute
   '/health': typeof HealthRoute
   '/imports': typeof ImportsRoute
   '/overview': typeof OverviewRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/comparison': typeof ComparisonRoute
   '/health': typeof HealthRoute
   '/imports': typeof ImportsRoute
   '/overview': typeof OverviewRoute
@@ -65,14 +74,24 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/health' | '/imports' | '/overview' | '/transactions'
+  fullPaths:
+    '/' | '/comparison' | '/health' | '/imports' | '/overview' | '/transactions'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/health' | '/imports' | '/overview' | '/transactions'
-  id: '__root__' | '/' | '/health' | '/imports' | '/overview' | '/transactions'
+  to:
+    '/' | '/comparison' | '/health' | '/imports' | '/overview' | '/transactions'
+  id:
+    | '__root__'
+    | '/'
+    | '/comparison'
+    | '/health'
+    | '/imports'
+    | '/overview'
+    | '/transactions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ComparisonRoute: typeof ComparisonRoute
   HealthRoute: typeof HealthRoute
   ImportsRoute: typeof ImportsRoute
   OverviewRoute: typeof OverviewRoute
@@ -86,6 +105,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comparison': {
+      id: '/comparison'
+      path: '/comparison'
+      fullPath: '/comparison'
+      preLoaderRoute: typeof ComparisonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/health': {
@@ -121,6 +147,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ComparisonRoute: ComparisonRoute,
   HealthRoute: HealthRoute,
   ImportsRoute: ImportsRoute,
   OverviewRoute: OverviewRoute,

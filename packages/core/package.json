@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./validation": "./src/validation.ts",
-    "./period": "./src/period.ts"
+    "./period": "./src/period.ts",
+    "./comparison": "./src/comparison.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
