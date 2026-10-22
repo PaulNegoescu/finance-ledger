@@ -214,3 +214,29 @@ any remaining categories into one bar; the table lists every category with its e
 and share. Uncategorized transactions remain visible. Money out includes transfers.
 Category links open the matching outgoing transactions with account, dates and currency
 preserved in the URL. Transaction filters now support visible currency and flow selectors.
+
+## Category groups
+
+Use **Manage categories** to assign a category to a group. Start with **Critical spending**,
+**Nice to have**, **Savings** and **Splurge**, or expand **Category groups** to add or rename
+your own groups. A category belongs to one group or stays **Ungrouped**. Existing categories
+are not assigned automatically. Empty groups can be deleted; move their categories first.
+
+Groups organize the current category definitions, so moving a category updates historical
+report rollups too. Its transaction assignments and deterministic rules are preserved.
+Savings is an organizational label; money-out reports still include transfers and do not
+infer savings-account balances or economic expense treatment.
+## Export transactions
+
+Use **Export CSV** on Transactions to download all rows matching the applied filters,
+including account, category, currency, money-in/out, date, description search and import
+batch. Draft changes and checkbox selection do not change the export. The export uses
+a consistent database snapshot and stable date/ID ordering; amounts remain exact decimal
+strings. CSV includes category and group names, assignment sources and references, without import
+hashes or raw source files. Empty selections download headers only.
+
+An export supports up to 10,000 transactions. Larger selections fail with a request to
+narrow the filters; no rows are silently omitted. Files use UTF-8 with a BOM and CRLF.
+Text cells that could be interpreted as spreadsheet formulas are prefixed with an
+apostrophe; numeric amount cells remain numeric. Downloads only start on an explicit
+click and are unavailable during an offline connection, loading or category updates.

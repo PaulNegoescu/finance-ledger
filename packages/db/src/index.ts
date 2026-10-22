@@ -25,6 +25,10 @@ export function createLedger(url: string) {
       return { ok: true };
     },
     metadata: async () => ({
+      categoryGroups: await db
+        .select()
+        .from(schema.categoryGroups)
+        .orderBy(schema.categoryGroups.name),
       accounts: await db
         .select()
         .from(schema.accounts)
@@ -39,6 +43,10 @@ export function createLedger(url: string) {
         .orderBy(schema.rules.priority, schema.rules.id),
     }),
     list: async () => ({
+      categoryGroups: await db
+        .select()
+        .from(schema.categoryGroups)
+        .orderBy(schema.categoryGroups.name),
       accounts: await db
         .select()
         .from(schema.accounts)
