@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { assignBulkCategories } from "../server/bulk-categories";
 import { assignCategory } from "../server/functions";
-import { listTransactions } from "../server/transactions";
+import { listTransactions, exportTransactions } from "../server/transactions";
 
 type Filters = {
   currency?: string;
@@ -48,6 +48,9 @@ export function Transactions({
   const [result, setResult] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportRequest = useRef(0);
+  const exportBusy = useRef(false);
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState(false);
   const [message, setMessage] = useState("");
@@ -103,6 +106,62 @@ export function Transactions({
       if (request.current === id) request.current++;
     };
   }, [query, revision, refresh, importId]);
+
+  useEffect(() => {
+    exportRequest.current++;
+    exportBusy.current = false;
+    setExporting(false);
+    return () => {
+      exportRequest.current++;
+    };
+  }, [query, revision, importId, disabled]);
+
+  async function downloadCsv() {
+    if (
+      disabled ||
+      saving ||
+      loading ||
+      loadError ||
+      exporting ||
+      exportBusy.current ||
+      !result
+    )
+      return;
+    const id = ++exportRequest.current;
+    exportBusy.current = true;
+    setExporting(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await exportTransactions({
+        data: { ...query.filters, importId },
+      });
+      if (id !== exportRequest.current) return;
+      if (!response.ok) {
+        setError(response.message);
+        return;
+      }
+      const url = URL.createObjectURL(
+        new Blob([response.csv], { type: "text/csv;charset=utf-8" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "finance-ledger-transactions.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1_000);
+      setMessage(`${response.count} transactions exported.`);
+    } catch {
+      if (id === exportRequest.current)
+        setError("Unable to export transactions. Try again.");
+    } finally {
+      if (id === exportRequest.current) {
+        setExporting(false);
+        exportBusy.current = false;
+      }
+    }
+  }
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -203,7 +262,7 @@ export function Transactions({
     }
   }
 
-  const locked = disabled || saving;
+  const locked = disabled || saving || exporting;
   const totalPages = result
     ? Math.max(1, Math.ceil(result.total / result.pageSize))
     : 1;
@@ -379,6 +438,15 @@ export function Transactions({
           </label>
           <div className="actions">
             <button>Apply filters</button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={locked || loading || loadError || !result}
+              title="Export all matching transactions (up to 10,000)"
+              onClick={() => void downloadCsv()}
+            >
+              {exporting ? "Exporting…" : "Export CSV"}
+            </button>
             <button
               type="button"
               className="secondary"

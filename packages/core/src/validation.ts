@@ -69,3 +69,5 @@ export const transactionQuery = transactionFilters
     uncategorized: z.boolean().default(false),
   })
   .refine(validRange, "Start date must not follow end date");
+
+export const transactionExportInput = transactionSearch;

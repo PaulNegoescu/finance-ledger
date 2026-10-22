@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./validation": "./src/validation.ts",
     "./period": "./src/period.ts",
-    "./comparison": "./src/comparison.ts"
+    "./comparison": "./src/comparison.ts",
+    "./csv": "./src/transaction-csv.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
