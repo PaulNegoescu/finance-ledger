@@ -1,3 +1,4 @@
+export { overviewInput, comparisonInput } from "./report-validation";
 import { z } from "zod";
 export const importInput = z.object({
   adapterId: z.string().min(1).max(80).default("ing"),

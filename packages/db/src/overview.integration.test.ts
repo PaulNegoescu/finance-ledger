@@ -176,6 +176,35 @@ describe.skipIf(!url)("Financial overview (synthetic data)", () => {
     expect(result.categories[0].expenseMinor).toBe("9999999999990000");
     expect(result.months[0].netMinor).toBe("-9999999999990000");
   });
+  it("compares filtered periods with exact, currency-separated reports", async () => {
+    const result = await overview.compare({
+      selected: { accountId: ron, from: "2041-04-01", to: "2041-04-30" },
+      baseline: { accountId: ron, from: "2041-05-01", to: "2041-05-31" },
+    });
+    expect(result.selected.totals).toEqual([
+      {
+        currency: "RON",
+        incomeMinor: "100000",
+        expenseMinor: "12345",
+        netMinor: "87655",
+        count: 2,
+      },
+    ]);
+    expect(result.baseline.totals).toEqual([
+      {
+        currency: "RON",
+        incomeMinor: "0",
+        expenseMinor: "2000",
+        netMinor: "-2000",
+        count: 1,
+      },
+    ]);
+    expect(result.selected.categories[0].categoryId).toBe(category);
+    expect(result.baseline.categories[0].categoryId).toBeNull();
+    await expect(
+      overview.compare({ selected: {}, baseline: { from: "2041-02-31" } }),
+    ).rejects.toThrow();
+  });
   it("rejects impossible/reversed dates and malformed account IDs", async () => {
     for (const input of [
       { from: "2041-02-31" },
