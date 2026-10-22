@@ -197,3 +197,11 @@ a future binary upload endpoint can use the same registry contract.
 
 Import file identity is scoped to account, bank adapter and format. The migration preserves
 existing hashes and treats earlier imports as ING CSV; historical counts remain null.
+
+## Report transaction links
+
+Transaction URLs accept validated account, category, uncategorized, date and search
+filters alongside the import filter. Applying or clearing filters updates the URL;
+reloading a report drill-down preserves its selection. Use browser back/forward to
+return to previous filter selections. Pagination and checkbox selections reset when
+the filter selection changes.

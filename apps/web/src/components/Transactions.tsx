@@ -18,6 +18,8 @@ type Props = {
   categories: { id: string; name: string }[];
   accounts: { id: string; name: string; currency: string }[];
   importId?: string;
+  initialFilters?: Partial<Filters>;
+  onFiltersChanged?: (filters: Filters) => void;
   revision: number;
   disabled: boolean;
   onAssigned: () => Promise<void>;
@@ -32,9 +34,15 @@ export function Transactions({
   disabled,
   onAssigned,
   importId,
+  initialFilters,
+  onFiltersChanged,
 }: Props) {
-  const [draft, setDraft] = useState<Filters>(emptyFilters);
-  const [query, setQuery] = useState({ filters: emptyFilters, page: 1 });
+  const [initial] = useState<Filters>(() => ({
+    ...emptyFilters,
+    ...initialFilters,
+  }));
+  const [draft, setDraft] = useState<Filters>(initial);
+  const [query, setQuery] = useState({ filters: initial, page: 1 });
   const [result, setResult] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,14 +112,13 @@ export function Transactions({
     setMessage("");
     setSelected([]);
     setBulkCategory("");
-    setQuery({
-      filters: {
-        ...draft,
-        search: draft.search.trim(),
-        categoryId: draft.uncategorized ? undefined : draft.categoryId,
-      },
-      page: 1,
-    });
+    const filters = {
+      ...draft,
+      search: draft.search.trim(),
+      categoryId: draft.uncategorized ? undefined : draft.categoryId,
+    };
+    if (onFiltersChanged) onFiltersChanged(filters);
+    else setQuery({ filters, page: 1 });
   }
 
   async function assign(id: string, categoryId: string | null) {
@@ -337,7 +344,8 @@ export function Transactions({
                 setSelected([]);
                 setBulkCategory("");
                 setDraft(emptyFilters);
-                setQuery({ filters: emptyFilters, page: 1 });
+                if (onFiltersChanged) onFiltersChanged(emptyFilters);
+                else setQuery({ filters: emptyFilters, page: 1 });
                 setMessage("");
               }}
             >
