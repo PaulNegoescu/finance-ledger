@@ -226,7 +226,6 @@ Groups organize the current category definitions, so moving a category updates h
 report rollups too. Its transaction assignments and deterministic rules are preserved.
 Savings is an organizational label; money-out reports still include transfers and do not
 infer savings-account balances or economic expense treatment.
-||||||| 6eb38a3
 ## Export transactions
 
 Use **Export CSV** on Transactions to download all rows matching the applied filters,
