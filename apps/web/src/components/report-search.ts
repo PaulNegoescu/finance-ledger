@@ -5,6 +5,7 @@ const year = z.string().regex(/^[1-9]\d{3}$/);
 const month = z.string().regex(/^[1-9]\d{3}-(0[1-9]|1[0-2])$/);
 const overviewSchema = overviewInput.safeExtend({ year: year.optional() });
 const spendingSchema = overviewInput.safeExtend({
+  view: z.enum(["categories", "groups"]).optional(),
   currency: z
     .string()
     .regex(/^[A-Z]{3}$/)
@@ -27,6 +28,7 @@ export type SpendingSearch = {
   from?: string;
   to?: string;
   currency?: string;
+  view?: "categories" | "groups";
   invalidFilters?: boolean;
 };
 export type ComparisonSearch = {

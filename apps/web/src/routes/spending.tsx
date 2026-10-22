@@ -37,8 +37,20 @@ function SpendingPage() {
           to: search.to,
         }}
         initialCurrency={search.currency}
+        initialView={search.view}
+        onViewChanged={(view) => {
+          void navigate({
+            search: { ...search, invalidFilters: undefined, view },
+          });
+        }}
         onFiltersChanged={(filters) => {
-          void navigate({ search: { ...filters, currency: search.currency } });
+          void navigate({
+            search: {
+              ...filters,
+              currency: search.currency,
+              view: search.view,
+            },
+          });
         }}
         onCurrencyChanged={(currency) => {
           void navigate({

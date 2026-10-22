@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { getOverview } from "../server/overview";
+import { groupSpending } from "./group-spending";
 import { spendingAmount, spendingReport } from "./spending-data";
 import "./spending.css";
 
@@ -13,6 +14,8 @@ type Props = {
   disabled: boolean;
   initialFilters?: Filters;
   initialCurrency?: string;
+  initialView?: "categories" | "groups";
+  onViewChanged?: (view: "categories" | "groups") => void;
   onFiltersChanged?: (filters: Filters) => void;
   onCurrencyChanged?: (currency: string) => void;
 };
@@ -22,6 +25,8 @@ export function Spending({
   disabled,
   initialFilters = {},
   initialCurrency,
+  initialView,
+  onViewChanged,
   onFiltersChanged,
   onCurrencyChanged,
 }: Props) {
@@ -37,6 +42,12 @@ export function Spending({
         "",
     );
   }, [initialCurrency, result]);
+  const [view, setView] = useState<"categories" | "groups">(
+    initialView ?? "groups",
+  );
+  useEffect(() => {
+    setView(initialView ?? "groups");
+  }, [initialView]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [validation, setValidation] = useState("");
@@ -79,6 +90,13 @@ export function Spending({
     onFiltersChanged?.({ ...draft });
   }
   const report = spendingReport(result?.categories ?? [], currency);
+  const groups = groupSpending(result?.categories ?? [], currency);
+  const chart = view === "groups" ? groups : report;
+  const categoryGroups = new Map(
+    (result?.categories ?? [])
+      .filter((row) => row.currency === currency)
+      .map((row) => [row.categoryId, row.group]),
+  );
   return (
     <div className="spending-report">
       <section className="panel">
@@ -206,19 +224,37 @@ export function Spending({
         <>
           <section className="panel">
             <div className="spending-heading">
-              <h2>Money out by category</h2>
+              <h2>Money out by {view === "groups" ? "group" : "category"}</h2>
               <strong>{spendingAmount(report.total, currency)}</strong>
             </div>
-            {report.chart.length ? (
+            <label className="spending-currency">
+              Group by
+              <select
+                value={view}
+                onChange={(event) => {
+                  const next = event.target.value as "groups" | "categories";
+                  setView(next);
+                  onViewChanged?.(next);
+                }}
+              >
+                <option value="groups">Groups</option>
+                <option value="categories">Categories</option>
+              </select>
+            </label>
+            {chart.chart.length ? (
               <figure
                 className="spending-chart"
-                aria-label={`Money out by category in ${currency}`}
+                aria-label={`Money out by ${view === "groups" ? "group" : "category"} in ${currency}`}
               >
-                {report.chart.map((row) => (
+                {chart.chart.map((row) => (
                   <div className="spending-bar-row" key={row.key}>
                     <div className="spending-bar-label">
-                      {row.key === "remaining" ? (
-                        <span>{row.category}</span>
+                      {row.key === "remaining" || view === "groups" ? (
+                        <span>
+                          {row.key === "remaining" && view === "groups"
+                            ? `Remaining groups (${groups.ranked.length - 8})`
+                            : row.category}
+                        </span>
                       ) : (
                         <Link
                           to="/transactions"
@@ -236,7 +272,7 @@ export function Spending({
                       )}
                       <span>
                         {spendingAmount(row.expenseMinor, currency)} ·{" "}
-                        {report.share(row.expenseMinor)}
+                        {chart.share(row.expenseMinor)}
                       </span>
                     </div>
                     <div className="spending-bar-track" aria-hidden="true">
@@ -255,6 +291,31 @@ export function Spending({
             ) : (
               <p>No money out matches these filters in {currency}.</p>
             )}
+            {view === "groups" && groups.ranked.length > 0 && (
+              <details>
+                <summary>Group breakdown</summary>
+                <div className="scroll">
+                  <table aria-label={`Group spending in ${currency}`}>
+                    <thead>
+                      <tr>
+                        <th scope="col">Group</th>
+                        <th scope="col">Money out</th>
+                        <th scope="col">Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groups.ranked.map((row) => (
+                        <tr key={row.categoryId ?? "ungrouped"}>
+                          <th scope="row">{row.category}</th>
+                          <td>{spendingAmount(row.expenseMinor, currency)}</td>
+                          <td>{groups.share(row.expenseMinor)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            )}
             <p className="spending-note">Money out includes transfers.</p>
           </section>
           {report.ranked.length > 0 && (
@@ -265,6 +326,7 @@ export function Spending({
                   <thead>
                     <tr>
                       <th scope="col">Category</th>
+                      <th scope="col">Group</th>
                       <th scope="col">Money out</th>
                       <th scope="col">Share</th>
                     </tr>
@@ -287,6 +349,9 @@ export function Spending({
                             {row.category}
                           </Link>
                         </th>
+                        <td>
+                          {categoryGroups.get(row.categoryId) ?? "Ungrouped"}
+                        </td>
                         <td>{spendingAmount(row.expenseMinor, currency)}</td>
                         <td>{report.share(row.expenseMinor)}</td>
                       </tr>

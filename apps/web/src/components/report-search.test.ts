@@ -25,9 +25,12 @@ describe("Report URL filters", () => {
     expect(
       readOverviewSearch({ ...filter, year: "2026", ignored: "value" }),
     ).toEqual({ ...filter, year: "2026" });
-    expect(readSpendingSearch({ ...filter, currency: "RON" })).toEqual({
+    expect(
+      readSpendingSearch({ ...filter, currency: "RON", view: "groups" }),
+    ).toEqual({
       ...filter,
       currency: "RON",
+      view: "groups",
     });
     expect(
       readComparisonSearch({
@@ -51,6 +54,9 @@ describe("Report URL filters", () => {
     }
     for (const invalid of [{ year: "2026<script>" }, { year: 2026 }])
       expect(readOverviewSearch(invalid)).toEqual({ invalidFilters: true });
+    expect(readSpendingSearch({ view: "unknown" })).toEqual({
+      invalidFilters: true,
+    });
     expect(readSpendingSearch({ currency: "ron" })).toEqual({
       invalidFilters: true,
     });
