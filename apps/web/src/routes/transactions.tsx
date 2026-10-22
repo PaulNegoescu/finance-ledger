@@ -32,6 +32,7 @@ function TransactionsPage() {
         }}
         importId={importId}
         categories={data.categories}
+        groups={data.categoryGroups}
         accounts={data.accounts}
         revision={revision}
         disabled={unavailable}

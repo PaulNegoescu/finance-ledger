@@ -249,7 +249,7 @@ export function Spending({
                 {chart.chart.map((row) => (
                   <div className="spending-bar-row" key={row.key}>
                     <div className="spending-bar-label">
-                      {row.key === "remaining" || view === "groups" ? (
+                      {row.key === "remaining" ? (
                         <span>
                           {row.key === "remaining" && view === "groups"
                             ? `Remaining groups (${groups.ranked.length - 8})`
@@ -262,9 +262,13 @@ export function Spending({
                             ...filters,
                             currency,
                             flow: "out",
-                            ...(row.categoryId
-                              ? { categoryId: row.categoryId }
-                              : { uncategorized: true }),
+                            ...(view === "groups"
+                              ? row.categoryId
+                                ? { groupId: row.categoryId }
+                                : { ungrouped: true }
+                              : row.categoryId
+                                ? { categoryId: row.categoryId }
+                                : { uncategorized: true }),
                           }}
                         >
                           {row.category}
@@ -306,7 +310,21 @@ export function Spending({
                     <tbody>
                       {groups.ranked.map((row) => (
                         <tr key={row.categoryId ?? "ungrouped"}>
-                          <th scope="row">{row.category}</th>
+                          <th scope="row">
+                            <Link
+                              to="/transactions"
+                              search={{
+                                ...filters,
+                                currency,
+                                flow: "out",
+                                ...(row.categoryId
+                                  ? { groupId: row.categoryId }
+                                  : { ungrouped: true }),
+                              }}
+                            >
+                              {row.category}
+                            </Link>
+                          </th>
                           <td>{spendingAmount(row.expenseMinor, currency)}</td>
                           <td>{groups.share(row.expenseMinor)}</td>
                         </tr>
