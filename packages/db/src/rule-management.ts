@@ -3,10 +3,14 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { categorize } from "@ledger/core";
+import {
+  categoryInput,
+  categoryGroupInput,
+  categoryGroupUpdateInput,
+} from "@ledger/core/validation";
 import * as schema from "./schema";
 
 const idInput = z.object({ id: z.uuid() });
-const categoryInput = z.object({ name: z.string().trim().min(1).max(80) });
 const categoryUpdateInput = categoryInput.extend({ id: z.uuid() });
 const ruleInput = z.object({
   contains: z.string().trim().min(2).max(120),
@@ -20,6 +24,33 @@ export function createRuleManagement(url: string) {
   const db = drizzle(client, { schema });
   return {
     close: () => client.end(),
+    addGroup: async (input: unknown) => {
+      const data = categoryGroupInput.parse(input);
+      const [group] = await db
+        .insert(schema.categoryGroups)
+        .values(data)
+        .returning();
+      return group;
+    },
+    updateGroup: async (input: unknown) => {
+      const { id, ...data } = categoryGroupUpdateInput.parse(input);
+      const [group] = await db
+        .update(schema.categoryGroups)
+        .set(data)
+        .where(eq(schema.categoryGroups.id, id))
+        .returning();
+      if (!group) throw new Error("Group not found.");
+      return group;
+    },
+    deleteGroup: async (input: unknown) => {
+      const { id } = idInput.parse(input);
+      const [group] = await db
+        .delete(schema.categoryGroups)
+        .where(eq(schema.categoryGroups.id, id))
+        .returning({ id: schema.categoryGroups.id });
+      if (!group) throw new Error("Group not found.");
+      return { ok: true };
+    },
     addCategory: async (input: unknown) => {
       const data = categoryInput.parse(input);
       const [category] = await db
