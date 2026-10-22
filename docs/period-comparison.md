@@ -12,6 +12,9 @@ and one decimal place, truncated toward zero. A zero baseline is shown as **No b
 An absent currency in one month is marked as no recorded activity, with zero recorded
 amounts. The current month is explicitly marked incomplete when included.
 
+Both periods load from one database snapshot, so concurrent imports or category changes
+cannot leave the two sides inconsistent.
+
 These are recorded transaction cash flows. Transfers remain included, currencies are
 not converted, and no account balances are inferred. Categories use their current
 assignments; uncategorized activity remains visible. The comparison is a read-only

@@ -9,7 +9,7 @@ import {
   periodChange,
   previousMonth,
 } from "@ledger/core/comparison";
-import { getOverview } from "../server/overview";
+import { getComparison } from "../server/overview";
 import "./period-comparison.css";
 
 type Props = {
@@ -17,8 +17,7 @@ type Props = {
   revision: number;
   disabled: boolean;
 };
-type Summary = Awaited<ReturnType<typeof getOverview>>;
-type Result = { selected: Summary; baseline: Summary };
+type Result = Awaited<ReturnType<typeof getComparison>>;
 type Filters = { selected: string; baseline: string; accountId: string };
 function monthLabel(month: string) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -64,12 +63,14 @@ export function PeriodComparison({ accounts, revision, disabled }: Props) {
     setError("");
     setResult(null);
     const accountId = filters.accountId || undefined;
-    void Promise.all([
-      getOverview({ data: { ...monthRange(filters.selected), accountId } }),
-      getOverview({ data: { ...monthRange(filters.baseline), accountId } }),
-    ])
-      .then(([selected, baseline]) => {
-        if (request.current === id) setResult({ selected, baseline });
+    void getComparison({
+      data: {
+        selected: { ...monthRange(filters.selected), accountId },
+        baseline: { ...monthRange(filters.baseline), accountId },
+      },
+    })
+      .then((data) => {
+        if (request.current === id) setResult(data);
       })
       .catch(() => {
         if (request.current === id)
