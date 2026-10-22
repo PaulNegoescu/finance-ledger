@@ -2,7 +2,7 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { and, asc, desc, eq, gte, lt, lte, sql } from "drizzle-orm";
 import { overviewInput, comparisonInput } from "@ledger/core/validation";
-import { categories, transactions } from "./schema";
+import { categoryGroups, categories, transactions } from "./schema";
 
 const amounts = {
   incomeMinor: sql<string>`coalesce(sum(case when ${transactions.amountMinor} > 0 then ${transactions.amountMinor} else 0 end), 0)::text`,
@@ -32,13 +32,22 @@ export function createOverview(url: string) {
       .select({
         currency: transactions.currency,
         categoryId: transactions.categoryId,
+        groupId: categories.groupId,
+        group: sql<string>`coalesce(${categoryGroups.name}, 'Ungrouped')`,
         category: sql<string>`coalesce(${categories.name}, 'Uncategorized')`,
         expenseMinor: sql<string>`sum(-${transactions.amountMinor})::text`,
       })
       .from(transactions)
       .leftJoin(categories, eq(transactions.categoryId, categories.id))
+      .leftJoin(categoryGroups, eq(categories.groupId, categoryGroups.id))
       .where(and(where, lt(transactions.amountMinor, 0)))
-      .groupBy(transactions.currency, transactions.categoryId, categories.name)
+      .groupBy(
+        transactions.currency,
+        transactions.categoryId,
+        categories.name,
+        categories.groupId,
+        categoryGroups.name,
+      )
       .orderBy(
         asc(transactions.currency),
         desc(sql`sum(-${transactions.amountMinor})`),

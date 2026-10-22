@@ -1,3 +1,7 @@
+export {
+  categoryGroupInput,
+  categoryGroupUpdateInput,
+} from "./category-groups";
 export { overviewInput, comparisonInput } from "./report-validation";
 import { z } from "zod";
 export const importInput = z.object({
@@ -22,6 +26,7 @@ export const importRequest = importInput.refine(
 );
 export const categoryInput = z.object({
   name: z.string().trim().min(1).max(80),
+  groupId: z.uuid().nullable().optional(),
 });
 export const assignmentInput = z.object({
   id: z.uuid(),
