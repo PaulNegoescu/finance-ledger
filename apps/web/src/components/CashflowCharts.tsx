@@ -12,16 +12,26 @@ export function CashflowCharts({
   months,
   from,
   to,
+  selectedChartYear,
+  onChartYearChanged,
 }: {
   months: CashflowMonth[];
   from?: string;
   to?: string;
+  selectedChartYear?: string;
+  onChartYearChanged?: (year: string) => void;
 }) {
   const years = [...new Set(months.map((row) => row.month.slice(0, 4)))]
     .sort()
     .reverse();
   const [year, setYear] = useState(years[0]);
-  const selectedYear = years.includes(year) ? year : years[0];
+  const selectedYear =
+    selectedChartYear ??
+    (onChartYearChanged ? years[0] : years.includes(year) ? year : years[0]);
+  const options = [...new Set([...years, selectedYear])]
+    .filter(Boolean)
+    .sort()
+    .reverse();
   const currencies = [
     ...new Set(
       months
@@ -37,9 +47,12 @@ export function CashflowCharts({
           Chart year
           <select
             value={selectedYear}
-            onChange={(event) => setYear(event.target.value)}
+            onChange={(event) => {
+              setYear(event.target.value);
+              onChartYearChanged?.(event.target.value);
+            }}
           >
-            {years.map((value) => (
+            {options.map((value) => (
               <option key={value}>{value}</option>
             ))}
           </select>
@@ -59,6 +72,7 @@ export function CashflowCharts({
           Net flow
         </span>
       </div>
+      {!currencies.length && <p>No recorded transactions in {selectedYear}.</p>}
       {currencies.map((currency) => (
         <CurrencyChart
           key={currency}
