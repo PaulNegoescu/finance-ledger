@@ -40,15 +40,23 @@ export function cashflowYear(
 ): CashflowMonth[] {
   const selected = new Map(
     rows
-      .filter((row) => row.currency === currency)
+      .filter(
+        (row) => row.currency === currency && row.month.startsWith(`${year}-`),
+      )
       .map((row) => [row.month, row]),
   );
+  const observed = [...selected.keys()].sort();
+  if (!observed.length) return [];
+  const first = observed[0];
+  const last = observed[observed.length - 1];
   return Array.from(
     { length: 12 },
     (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`,
   )
     .filter(
       (month) =>
+        month >= first &&
+        month <= last &&
         (!from || month >= from.slice(0, 7)) &&
         (!to || month <= to.slice(0, 7)),
     )

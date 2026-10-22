@@ -17,26 +17,37 @@ it("scales arbitrarily large amounts without unsafe numeric conversion", () => {
     "RON −9,007,199,254,740,993.01",
   );
 });
-it("keeps currencies separate and fills unrecorded months inside the selected range", () => {
+it("fills only currency-specific gaps between observed months and clips to filters", () => {
   const row = {
-    month: "2026-02",
+    month: "2026-01",
     currency: "RON",
     incomeMinor: "200",
     expenseMinor: "300",
     netMinor: "-100",
     count: 2,
   };
-  const rows = cashflowYear(
-    [row, { ...row, currency: "EUR", incomeMinor: "9999" }],
-    "2026",
-    "RON",
-    "2026-01-15",
-    "2026-03-20",
-  );
-  expect(rows.map((r) => r.month)).toEqual(["2026-01", "2026-02", "2026-03"]);
-  expect(rows[0].count).toBe(0);
-  expect(rows[1]).toEqual(row);
-  expect(rows[2].netMinor).toBe("0");
+  const input = [
+    row,
+    { ...row, month: "2026-03" },
+    { ...row, currency: "EUR", month: "2026-12", incomeMinor: "9999" },
+  ];
+  const rows = cashflowYear(input, "2026", "RON");
+  expect(rows.map((row) => row.month)).toEqual([
+    "2026-01",
+    "2026-02",
+    "2026-03",
+  ]);
+  expect(rows[0]).toEqual(row);
+  expect(rows[1]).toMatchObject({ count: 0, netMinor: "0" });
+  expect(
+    cashflowYear(input, "2026", "RON", "2026-02-15", "2026-12-31").map(
+      (row) => row.month,
+    ),
+  ).toEqual(["2026-02", "2026-03"]);
+  expect(cashflowYear(input, "2026", "EUR").map((row) => row.month)).toEqual([
+    "2026-12",
+  ]);
+  expect(cashflowYear(input, "2025", "RON")).toEqual([]);
 });
 it("uses Bucharest month boundaries and handles previous January and leap years", () => {
   expect(cashflowPeriod("month", new Date("2025-12-31T22:30:00Z"))).toEqual({

@@ -123,8 +123,9 @@ function CurrencyChart({
         >
           <title id={`${id}-title`}>{currency} monthly cash flow</title>
           <desc id={`${id}-description`}>
-            Money in and money out bars with a net flow line. Months without
-            recorded transactions are zero. Exact values are in the table below.
+            Money in and money out bars with a net flow line. Gaps between the
+            first and last recorded months are zero. Exact values are in the
+            table below.
           </desc>
           {[0, 1, 2].map((index) => {
             const minor = (maximum * BigInt(index)) / 2n;
