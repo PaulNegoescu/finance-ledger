@@ -119,8 +119,8 @@ export function Transactions({
       search: draft.search.trim(),
       categoryId: draft.uncategorized ? undefined : draft.categoryId,
     };
-    if (onFiltersChanged) onFiltersChanged(filters);
-    else setQuery({ filters, page: 1 });
+    setQuery({ filters, page: 1 });
+    onFiltersChanged?.(filters);
   }
 
   async function assign(id: string, categoryId: string | null) {
@@ -386,8 +386,8 @@ export function Transactions({
                 setSelected([]);
                 setBulkCategory("");
                 setDraft(emptyFilters);
-                if (onFiltersChanged) onFiltersChanged(emptyFilters);
-                else setQuery({ filters: emptyFilters, page: 1 });
+                setQuery({ filters: emptyFilters, page: 1 });
+                onFiltersChanged?.(emptyFilters);
                 setMessage("");
               }}
             >
