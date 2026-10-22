@@ -11,6 +11,8 @@ type Filters = {
   search: string;
   accountId?: string;
   categoryId?: string;
+  groupId?: string;
+  ungrouped?: boolean;
   uncategorized: boolean;
   from?: string;
   to?: string;
@@ -18,6 +20,7 @@ type Filters = {
 type Page = Awaited<ReturnType<typeof listTransactions>>;
 type Props = {
   categories: { id: string; name: string }[];
+  groups: { id: string; name: string }[];
   accounts: { id: string; name: string; currency: string }[];
   importId?: string;
   initialFilters?: Partial<Filters>;
@@ -31,6 +34,7 @@ const pageSize = 25;
 
 export function Transactions({
   categories,
+  groups,
   accounts,
   revision,
   disabled,
@@ -367,6 +371,32 @@ export function Transactions({
                 <option value="">All transactions</option>
                 <option value="in">Money in</option>
                 <option value="out">Money out</option>
+              </select>
+            </label>
+            <label>
+              Category group
+              <select
+                value={draft.ungrouped ? "ungrouped" : (draft.groupId ?? "")}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    groupId:
+                      event.target.value && event.target.value !== "ungrouped"
+                        ? event.target.value
+                        : undefined,
+                    ungrouped: event.target.value === "ungrouped" || undefined,
+                    categoryId: undefined,
+                    uncategorized: false,
+                  }))
+                }
+              >
+                <option value="">All groups</option>
+                <option value="ungrouped">Ungrouped</option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
               </select>
             </label>
             <label>

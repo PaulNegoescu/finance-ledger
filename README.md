@@ -226,6 +226,7 @@ Groups organize the current category definitions, so moving a category updates h
 report rollups too. Its transaction assignments and deterministic rules are preserved.
 Savings is an organizational label; money-out reports still include transfers and do not
 infer savings-account balances or economic expense treatment.
+
 ## Export transactions
 
 Use **Export CSV** on Transactions to download all rows matching the applied filters,
@@ -240,3 +241,9 @@ narrow the filters; no rows are silently omitted. Files use UTF-8 with a BOM and
 Text cells that could be interpreted as spreadsheet formulas are prefixed with an
 apostrophe; numeric amount cells remain numeric. Downloads only start on an explicit
 click and are unavailable during an offline connection, loading or category updates.
+
+Group bars and group-breakdown names in Spending open the matching outgoing transactions.
+The account, date range and currency carry through to the transaction list and its CSV export.
+The **Category group** transaction filter can select one group or **Ungrouped**, which includes
+both categories without a group and uncategorized transactions. Group and category filters
+intersect; groups always follow current category memberships.

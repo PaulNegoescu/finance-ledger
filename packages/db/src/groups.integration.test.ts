@@ -106,4 +106,94 @@ describe.skipIf(!url)("Category groups (synthetic data)", () => {
       ok: true,
     });
   });
+  it("reconciles group and ungrouped report totals with transaction lists and CSV exports", async () => {
+    const group = await management.addGroup({ name: prefix + "-drilldown" });
+    const grouped = await management.addCategory({
+      name: prefix + "-grouped",
+      groupId: group.id,
+    });
+    const ungrouped = await management.addCategory({
+      name: prefix + "-ungrouped",
+    });
+    await ledger.importCsv({
+      account: prefix + "-drilldown",
+      currency: "RON",
+      csv: "Date;Description;Amount;Currency;Reference\n2026-07-01;Fictional group debit;-12.34;RON;GROUP-DEBIT\n2026-07-02;Fictional group credit;2.00;RON;GROUP-CREDIT\n2026-07-03;Fictional ungrouped;-3.00;RON;UNGROUPED\n2026-07-04;Fictional uncategorized;-4.00;RON;UNCATEGORIZED",
+    });
+    const accountId = (await ledger.metadata()).accounts.find(
+      (row) => row.name === prefix + "-drilldown",
+    )!.id;
+    const rows = (await queries.listTransactions({ accountId })).transactions;
+    for (const row of rows)
+      await ledger.assign({
+        id: row.id,
+        categoryId: row.reference.startsWith("GROUP-")
+          ? grouped.id
+          : row.reference === "UNGROUPED"
+            ? ungrouped.id
+            : null,
+      });
+    const filter = {
+      accountId,
+      currency: "RON",
+      flow: "out",
+      groupId: group.id,
+    };
+    const report = await overview.summarize({ accountId });
+    expect(
+      report.categories.find((row) => row.groupId === group.id)?.expenseMinor,
+    ).toBe("1234");
+    const page = await queries.listTransactions(filter);
+    expect(page.total).toBe(1);
+    expect(page.transactions[0].reference).toBe("GROUP-DEBIT");
+    const csv = await queries.exportTransactions(filter);
+    expect(csv.count).toBe(1);
+    expect(csv.csv).toContain('"-12.34"');
+    expect(csv.csv).not.toContain("GROUP-CREDIT");
+    expect(
+      (await queries.listTransactions({ ...filter, flow: "in" })).total,
+    ).toBe(1);
+    expect(
+      (await queries.listTransactions({ ...filter, currency: "EUR" })).total,
+    ).toBe(0);
+    expect(
+      (await queries.listTransactions({ ...filter, from: "2026-08-01" })).total,
+    ).toBe(0);
+    expect(
+      (
+        await queries.listTransactions({
+          accountId,
+          ungrouped: true,
+          flow: "out",
+        })
+      ).total,
+    ).toBe(2);
+    expect(
+      (
+        await queries.listTransactions({
+          accountId,
+          ungrouped: true,
+          uncategorized: true,
+        })
+      ).total,
+    ).toBe(1);
+    expect(
+      (await queries.exportTransactions({ accountId, ungrouped: true })).count,
+    ).toBe(2);
+    await management.updateCategory({
+      id: grouped.id,
+      name: grouped.name,
+      groupId: null,
+    });
+    expect((await queries.listTransactions(filter)).total).toBe(0);
+    expect(
+      (
+        await queries.listTransactions({
+          accountId,
+          ungrouped: true,
+          flow: "out",
+        })
+      ).total,
+    ).toBe(3);
+  });
 });
