@@ -1,0 +1,72 @@
+.spending-report {
+  display: grid;
+  gap: 24px;
+}
+.spending-report .spending-currency {
+  max-width: 200px;
+  margin: 24px 0 0;
+}
+.spending-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.spending-heading h2 {
+  margin: 0;
+}
+.spending-heading strong {
+  font-size: 22px;
+  color: #155e63;
+  font-variant-numeric: tabular-nums;
+}
+.spending-chart {
+  margin: 0;
+  display: grid;
+  gap: 20px;
+}
+.spending-bar-label {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.spending-bar-label span:last-child {
+  font-variant-numeric: tabular-nums;
+  color: #425f6b;
+}
+.spending-bar-track {
+  height: 16px;
+  background: #edf5f7;
+  border-radius: 3px;
+}
+.spending-bar {
+  height: 100%;
+  min-width: 1px;
+  background: #21858b;
+  border-radius: 3px;
+}
+.spending-bar.uncategorized {
+  background: #8c6c35;
+}
+.spending-note {
+  margin: 24px 0 0;
+  color: #526b76;
+}
+.spending-report tbody th {
+  background: transparent;
+  color: inherit;
+  font-weight: 400;
+}
+.spending-report td {
+  font-variant-numeric: tabular-nums;
+}
+
+.spending-report a {
+  color: #155e63;
+  text-underline-offset: 3px;
+}

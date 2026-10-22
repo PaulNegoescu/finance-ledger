@@ -34,6 +34,9 @@ export function PageHeader({ data, unavailable, onChanged }: Props) {
           <Link to="/overview" activeProps={{ "aria-current": "page" }}>
             Overview
           </Link>
+          <Link to="/spending" activeProps={{ "aria-current": "page" }}>
+            Spending
+          </Link>
           <Link to="/comparison" activeProps={{ "aria-current": "page" }}>
             Comparison
           </Link>

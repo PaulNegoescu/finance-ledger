@@ -14,6 +14,7 @@ import { Route as ComparisonRouteImport } from './routes/comparison'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as ImportsRouteImport } from './routes/imports'
 import { Route as OverviewRouteImport } from './routes/overview'
+import { Route as SpendingRouteImport } from './routes/spending'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const OverviewRoute = OverviewRouteImport.update({
   path: '/overview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpendingRoute = SpendingRouteImport.update({
+  id: '/spending',
+  path: '/spending',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TransactionsRoute = TransactionsRouteImport.update({
   id: '/transactions',
   path: '/transactions',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/health': typeof HealthRoute
   '/imports': typeof ImportsRoute
   '/overview': typeof OverviewRoute
+  '/spending': typeof SpendingRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/health': typeof HealthRoute
   '/imports': typeof ImportsRoute
   '/overview': typeof OverviewRoute
+  '/spending': typeof SpendingRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesById {
@@ -70,15 +78,28 @@ export interface FileRoutesById {
   '/health': typeof HealthRoute
   '/imports': typeof ImportsRoute
   '/overview': typeof OverviewRoute
+  '/spending': typeof SpendingRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/comparison' | '/health' | '/imports' | '/overview' | '/transactions'
+    | '/'
+    | '/comparison'
+    | '/health'
+    | '/imports'
+    | '/overview'
+    | '/spending'
+    | '/transactions'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/comparison' | '/health' | '/imports' | '/overview' | '/transactions'
+    | '/'
+    | '/comparison'
+    | '/health'
+    | '/imports'
+    | '/overview'
+    | '/spending'
+    | '/transactions'
   id:
     | '__root__'
     | '/'
@@ -86,6 +107,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/imports'
     | '/overview'
+    | '/spending'
     | '/transactions'
   fileRoutesById: FileRoutesById
 }
@@ -95,6 +117,7 @@ export interface RootRouteChildren {
   HealthRoute: typeof HealthRoute
   ImportsRoute: typeof ImportsRoute
   OverviewRoute: typeof OverviewRoute
+  SpendingRoute: typeof SpendingRoute
   TransactionsRoute: typeof TransactionsRoute
 }
 
@@ -135,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/spending': {
+      id: '/spending'
+      path: '/spending'
+      fullPath: '/spending'
+      preLoaderRoute: typeof SpendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/transactions': {
       id: '/transactions'
       path: '/transactions'
@@ -151,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   HealthRoute: HealthRoute,
   ImportsRoute: ImportsRoute,
   OverviewRoute: OverviewRoute,
+  SpendingRoute: SpendingRoute,
   TransactionsRoute: TransactionsRoute,
 }
 export const routeTree = rootRouteImport
