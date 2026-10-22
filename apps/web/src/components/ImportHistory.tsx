@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { listImportHistory } from "../server/import-history";
 
@@ -106,7 +107,10 @@ export function ImportHistory({ accounts, revision, disabled }: Props) {
                       <th scope="col">Imported</th>
                       <th scope="col">Account</th>
                       <th scope="col">Currency</th>
-                      <th scope="col">Transactions</th>
+                      <th scope="col">Source</th>
+                      <th scope="col">Added</th>
+                      <th scope="col">Skipped</th>
+                      <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -122,7 +126,20 @@ export function ImportHistory({ accounts, revision, disabled }: Props) {
                         </td>
                         <td>{batch.account}</td>
                         <td>{batch.currency}</td>
+                        <td>
+                          {batch.adapterId === "ing" ? "ING" : batch.adapterId}{" "}
+                          · {batch.format.toUpperCase()}
+                        </td>
                         <td>{batch.transactionCount}</td>
+                        <td>{batch.skippedCount ?? "—"}</td>
+                        <td>
+                          <Link
+                            to="/transactions"
+                            search={{ importId: batch.id }}
+                          >
+                            View transactions
+                          </Link>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

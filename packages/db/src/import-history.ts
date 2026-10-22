@@ -33,6 +33,10 @@ export function createImportHistory(url: string) {
           const rows = await tx
             .select({
               id: imports.id,
+              adapterId: imports.adapterId,
+              format: imports.format,
+              inputCount: imports.inputCount,
+              skippedCount: imports.skippedCount,
               account: accounts.name,
               currency: accounts.currency,
               createdAt: imports.createdAt,

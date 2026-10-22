@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { assignBulkCategories } from "../server/bulk-categories";
@@ -16,6 +17,7 @@ type Page = Awaited<ReturnType<typeof listTransactions>>;
 type Props = {
   categories: { id: string; name: string }[];
   accounts: { id: string; name: string; currency: string }[];
+  importId?: string;
   revision: number;
   disabled: boolean;
   onAssigned: () => Promise<void>;
@@ -29,6 +31,7 @@ export function Transactions({
   revision,
   disabled,
   onAssigned,
+  importId,
 }: Props) {
   const [draft, setDraft] = useState<Filters>(emptyFilters);
   const [query, setQuery] = useState({ filters: emptyFilters, page: 1 });
@@ -65,7 +68,7 @@ export function Transactions({
     setError("");
     setLoadError(false);
     void listTransactions({
-      data: { ...query.filters, page: query.page, pageSize },
+      data: { ...query.filters, importId, page: query.page, pageSize },
     })
       .then((data) => {
         if (request.current !== id) return;
@@ -89,7 +92,7 @@ export function Transactions({
     return () => {
       if (request.current === id) request.current++;
     };
-  }, [query, revision, refresh]);
+  }, [query, revision, refresh, importId]);
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -202,6 +205,14 @@ export function Transactions({
     : 0;
   return (
     <section className="panel ledger" aria-labelledby="transactions-heading">
+      {importId && (
+        <p className="notice">
+          Transactions from one import.{" "}
+          <Link to="/transactions" search={{}}>
+            Show all transactions
+          </Link>
+        </p>
+      )}
       <h1 id="transactions-heading" className="page-title">
         Transactions
       </h1>

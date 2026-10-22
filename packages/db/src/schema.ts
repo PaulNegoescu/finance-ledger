@@ -35,9 +35,24 @@ export const imports = pgTable(
       .notNull()
       .references(() => accounts.id),
     hash: text().notNull(),
+    adapterId: text().notNull().default("ing"),
+    format: text().notNull().default("csv"),
+    inputCount: integer(),
+    skippedCount: integer(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("imports_account_hash").on(t.accountId, t.hash)],
+  (t) => [
+    uniqueIndex("imports_account_source_hash").on(
+      t.accountId,
+      t.adapterId,
+      t.format,
+      t.hash,
+    ),
+    check(
+      "valid_import_counts",
+      sql`(${t.inputCount} is null and ${t.skippedCount} is null) or (${t.inputCount} is not null and ${t.skippedCount} is not null and ${t.inputCount} >= 0 and ${t.skippedCount} >= 0 and ${t.skippedCount} <= ${t.inputCount})`,
+    ),
+  ],
 );
 export const transactions = pgTable(
   "transactions",
