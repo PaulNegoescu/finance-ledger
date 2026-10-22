@@ -167,3 +167,27 @@ New names are checked again on the server under the import lock, including concu
 case variants. The database service retains name-based input for internal callers/tests;
 the browser endpoints enforce explicit intent. UTF-8 CSV size is checked by encoded byte
 length on the server as well as file size in the browser.
+
+## Bank adapters and file formats
+
+`packages/core/src/adapters` separates bank-specific parsing from the ledger.
+A `BankAdapter` has a stable ID, a name, and a map of format handlers. Each handler
+advertises its media types and accepts text or `Uint8Array` content, synchronously
+or asynchronously. All handlers return the same `ImportReview`: normalized transactions,
+source-row locations where available, and validation issues. Preview and confirmation
+both use the registry; any issue prevents the database import.
+
+ING (`ing`) currently provides CSV (`csv`). It supports the existing flat exports and
+Home’Bank grouped exports with Romanian month names, a holder preamble, shifted column
+labels, and transaction detail lines. Terminal details are retained in descriptions;
+authorization numbers become references. Holder names, card details, source-account
+metadata and authorization dates are omitted. Malformed groups block confirmation.
+`fixtures/ing-grouped-synthetic.csv` contains entirely fictional data matching this layout.
+
+To add a bank, implement `BankAdapter` in its own adapter folder and register it in
+`adapters/registry.ts`. Add another entry to its `formats` map for a new file format;
+shared ledger and categorization code require no bank-specific changes. Tests exercise
+multiple formats and asynchronous binary handlers using a fictional adapter. ING PDF
+parsing is not implemented yet. The current browser upload and server request remain
+CSV-only, with `adapterId: "ing"` and `format: "csv"` defaults for existing callers;
+a future binary upload endpoint can use the same registry contract.
