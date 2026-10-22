@@ -1,8 +1,8 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { and, asc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, asc, eq, gte, lt, isNull, sql } from "drizzle-orm";
 import { trendsInput } from "@ledger/core/trends";
-import { categories, transactions } from "./schema";
+import { categories, categoryGroups, transactions } from "./schema";
 export function createTrends(url: string) {
   const client = postgres(url, { max: 5, onnotice: () => {} });
   const db = drizzle(client);
@@ -14,6 +14,11 @@ export function createTrends(url: string) {
         gte(transactions.date, `${query.year}-01-01`),
         lt(transactions.date, `${query.year + 1}-01-01`),
         lt(transactions.amountMinor, 0),
+        query.ungrouped
+          ? isNull(categories.groupId)
+          : query.groupId
+            ? eq(categories.groupId, query.groupId)
+            : undefined,
         query.accountId
           ? eq(transactions.accountId, query.accountId)
           : undefined,
@@ -23,6 +28,7 @@ export function createTrends(url: string) {
           const currencies = await tx
             .selectDistinct({ currency: transactions.currency })
             .from(transactions)
+            .leftJoin(categories, eq(transactions.categoryId, categories.id))
             .where(where)
             .orderBy(asc(transactions.currency));
           const month = sql<string>`to_char(${transactions.date}, 'YYYY-MM')`;
@@ -31,12 +37,15 @@ export function createTrends(url: string) {
               month,
               currency: transactions.currency,
               categoryId: transactions.categoryId,
+              groupId: categories.groupId,
+              group: sql<string>`coalesce(${categoryGroups.name}, 'Ungrouped')`,
               category: sql<string>`coalesce(${categories.name}, 'Uncategorized')`,
               expenseMinor: sql<string>`sum(-${transactions.amountMinor})::text`,
               count: sql<number>`count(*)::integer`,
             })
             .from(transactions)
             .leftJoin(categories, eq(transactions.categoryId, categories.id))
+            .leftJoin(categoryGroups, eq(categories.groupId, categoryGroups.id))
             .where(
               and(
                 where,
@@ -50,6 +59,8 @@ export function createTrends(url: string) {
               transactions.currency,
               transactions.categoryId,
               categories.name,
+              categories.groupId,
+              categoryGroups.name,
             )
             .orderBy(
               asc(month),

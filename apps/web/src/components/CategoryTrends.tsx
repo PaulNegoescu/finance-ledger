@@ -6,9 +6,16 @@ import { getTrends } from "../server/trends";
 import { categoryTrends, trendAmount, trendRatio } from "./trends-data";
 import "./category-trends.css";
 
-type Search = { year?: number; accountId?: string; currency?: string };
+type Search = {
+  year?: number;
+  accountId?: string;
+  currency?: string;
+  groupId?: string;
+  ungrouped?: boolean;
+};
 type Props = {
   search: Search;
+  groups: { id: string; name: string }[];
   accounts: { id: string; name: string; currency: string }[];
   disabled: boolean;
   revision: number;
@@ -18,6 +25,7 @@ type Result = Awaited<ReturnType<typeof getTrends>>;
 export function CategoryTrends({
   search,
   accounts,
+  groups,
   disabled,
   revision,
   onApply,
@@ -28,6 +36,7 @@ export function CategoryTrends({
   const [draft, setDraft] = useState({
     year: String(year),
     accountId: search.accountId ?? "",
+    group: search.ungrouped ? "ungrouped" : (search.groupId ?? ""),
   });
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +54,13 @@ export function CategoryTrends({
     setError("");
     setResult(null);
     void getTrends({
-      data: { year, accountId: search.accountId, currency: search.currency },
+      data: {
+        year,
+        accountId: search.accountId,
+        currency: search.currency,
+        groupId: search.groupId,
+        ungrouped: search.ungrouped,
+      },
     })
       .then((data) => {
         if (request.current === id) setResult(data);
@@ -60,7 +75,16 @@ export function CategoryTrends({
     return () => {
       if (request.current === id) request.current++;
     };
-  }, [year, search.accountId, search.currency, revision, disabled, refresh]);
+  }, [
+    year,
+    search.accountId,
+    search.currency,
+    search.groupId,
+    search.ungrouped,
+    revision,
+    disabled,
+    refresh,
+  ]);
   function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = Number(draft.year);
@@ -73,6 +97,9 @@ export function CategoryTrends({
       year: value,
       accountId: draft.accountId || undefined,
       currency: search.currency,
+      groupId:
+        draft.group && draft.group !== "ungrouped" ? draft.group : undefined,
+      ungrouped: draft.group === "ungrouped" || undefined,
     });
   }
   const currency = search.currency ?? result?.currencies[0] ?? "";
@@ -103,6 +130,26 @@ export function CategoryTrends({
                   {accounts.map((account) => (
                     <option value={account.id} key={account.id}>
                       {account.name} ({account.currency})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Category group
+                <select
+                  value={draft.group}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      group: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All groups</option>
+                  <option value="ungrouped">Ungrouped</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
                     </option>
                   ))}
                 </select>
@@ -156,6 +203,11 @@ export function CategoryTrends({
                 type="button"
                 className="secondary"
                 onClick={() => {
+                  setDraft({
+                    year: currentMonthRange().from.slice(0, 4),
+                    accountId: "",
+                    group: "",
+                  });
                   setRefresh((value) => value + 1);
                   onApply({});
                 }}
@@ -248,6 +300,7 @@ export function CategoryTrends({
                   <thead>
                     <tr>
                       <th scope="col">Category</th>
+                      <th scope="col">Group</th>
                       {report.months.map((month) => (
                         <th scope="col" key={month}>
                           {label(month)}
@@ -260,6 +313,7 @@ export function CategoryTrends({
                     {report.categories.map((category) => (
                       <tr key={category.id ?? "uncategorized"}>
                         <th scope="row">{category.name}</th>
+                        <td>{category.group}</td>
                         {category.values.map((value, i) => (
                           <td
                             key={report.months[i]}
@@ -301,7 +355,9 @@ export function CategoryTrends({
                   </tbody>
                   <tfoot>
                     <tr>
-                      <th scope="row">Total</th>
+                      <th scope="row" colSpan={2}>
+                        Total
+                      </th>
                       {report.totals.map((value, i) => (
                         <td key={i}>
                           {trendAmount(value, currency).replace(

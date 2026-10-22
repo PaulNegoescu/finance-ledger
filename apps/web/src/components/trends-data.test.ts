@@ -54,6 +54,7 @@ it("keeps top categories plus Other reconciled to monthly totals and validates y
   }));
   const report = categoryTrends(rows, 2026, "RON");
   expect(report.series).toHaveLength(6);
+  expect(new Set(report.series.map((series) => series.color)).size).toBe(6);
   expect(
     report.series.reduce((sum, series) => sum + series.values[1], 0n),
   ).toBe(report.totals[1]);

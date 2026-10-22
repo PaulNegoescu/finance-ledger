@@ -10,7 +10,7 @@
 }
 .trends-filters {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr 1fr;
   gap: 16px;
 }
 .trends-heading {
@@ -100,5 +100,11 @@
   .trends-filters {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+}
+
+@media (max-width: 1000px) and (min-width: 601px) {
+  .trends-filters {
+    grid-template-columns: 1fr 1fr;
   }
 }

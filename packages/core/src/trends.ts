@@ -2,6 +2,8 @@ import { z } from "zod";
 export const trendsInput = z.object({
   year: z.number().int().min(1000).max(9998),
   accountId: z.uuid().optional(),
+  groupId: z.uuid().optional(),
+  ungrouped: z.boolean().optional(),
   currency: z
     .string()
     .regex(/^[A-Z]{3}$/)

@@ -28,6 +28,7 @@ function TrendsPage() {
         key={JSON.stringify(search)}
         search={search}
         accounts={data.accounts}
+        groups={data.categoryGroups}
         disabled={unavailable}
         revision={revision}
         onApply={(next) => {

@@ -5,6 +5,8 @@ export type TrendRow = {
   category: string;
   expenseMinor: string;
   count: number;
+  groupId?: string | null;
+  group?: string;
 };
 const palette = [
   "#287e83",
@@ -47,6 +49,8 @@ export function categoryTrends(
       values: bigint[];
       counts: number[];
       color: string;
+      groupId: string | null;
+      group: string;
     }
   >();
   for (const row of rows) {
@@ -56,6 +60,8 @@ export function categoryTrends(
     if (!category) {
       category = {
         id: row.categoryId,
+        groupId: row.groupId ?? null,
+        group: row.group ?? "Ungrouped",
         name: row.category,
         total: 0n,
         values: months.map(() => 0n),
@@ -86,14 +92,18 @@ export function categoryTrends(
     (max, category) => category.values.reduce((a, b) => (a > b ? a : b), max),
     0n,
   );
-  const series = categories
-    .slice(0, 5)
-    .map((category) => ({
-      key: category.id ?? "uncategorized",
-      name: category.name,
-      values: category.values,
-      color: category.color,
-    }));
+  const visible = categories.slice(0, 5);
+  const colors = new Map(
+    [...visible]
+      .sort((a, b) => (a.id ?? "").localeCompare(b.id ?? ""))
+      .map((category, index) => [category.id, palette[index]]),
+  );
+  const series = visible.map((category) => ({
+    key: category.id ?? "uncategorized",
+    name: category.name,
+    values: category.values,
+    color: colors.get(category.id)!,
+  }));
   if (categories.length > 5)
     series.push({
       key: "other",

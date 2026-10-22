@@ -13,6 +13,7 @@ describe.skipIf(!url)("Category monthly trends (fictional data)", () => {
     other = randomUUID(),
     precise = randomUUID(),
     category = randomUUID();
+  const group = randomUUID();
   const batch = randomUUID(),
     otherBatch = randomUUID(),
     preciseBatch = randomUUID();
@@ -24,7 +25,8 @@ describe.skipIf(!url)("Category monthly trends (fictional data)", () => {
       ),
     });
     await client`insert into accounts (id, name, currency) values (${account}, ${"trends-" + account}, 'RON'), (${other}, ${"trends-" + other}, 'EUR'), (${precise}, ${"trends-" + precise}, 'USD')`;
-    await client`insert into categories (id, name) values (${category}, ${"Synthetic trends " + category})`;
+    await client`insert into category_groups (id, name) values (${group}, ${"Synthetic group " + group})`;
+    await client`insert into categories (id, name, "groupId") values (${category}, ${"Synthetic trends " + category}, ${group})`;
     await client`insert into imports (id, "accountId", hash) values (${batch}, ${account}, 'demo'), (${otherBatch}, ${other}, 'demo'), (${preciseBatch}, ${precise}, 'demo')`;
     await client`insert into transactions (id, "accountId", "importId", date, description, "amountMinor", currency, reference, fingerprint, "categoryId") select gen_random_uuid(), ${account}, ${batch}, '2077-01-01', 'Synthetic outgoing', -100, 'RON', '', i::text, ${category} from generate_series(1, 600) i`;
     const rows = [
@@ -81,6 +83,7 @@ describe.skipIf(!url)("Category monthly trends (fictional data)", () => {
       await client`delete from imports where "accountId" in (${account}, ${other}, ${precise})`;
       await client`delete from accounts where id in (${account}, ${other}, ${precise})`;
       await client`delete from categories where id = ${category}`;
+      await client`delete from category_groups where id = ${group}`;
       await client.end();
     }
   });
@@ -124,6 +127,31 @@ describe.skipIf(!url)("Category monthly trends (fictional data)", () => {
     expect(
       (await trends.summarize({ year: 2077, accountId: precise })).rows[0],
     ).toMatchObject({ expenseMinor: "9999999999990000", count: 10000 });
+  });
+  it("filters grouped and ungrouped categories without losing uncategorized rows", async () => {
+    const grouped = await trends.summarize({
+      year: 2077,
+      accountId: account,
+      groupId: group,
+    });
+    expect(grouped.rows).toHaveLength(1);
+    expect(grouped.rows[0]).toMatchObject({
+      groupId: group,
+      group: "Synthetic group " + group,
+      expenseMinor: "60000",
+    });
+    const ungrouped = await trends.summarize({
+      year: 2077,
+      accountId: account,
+      ungrouped: true,
+    });
+    expect(ungrouped.rows).toHaveLength(1);
+    expect(ungrouped.rows[0]).toMatchObject({
+      categoryId: null,
+      groupId: null,
+      group: "Ungrouped",
+      expenseMinor: "42",
+    });
   });
   it("validates year, currency and account identifiers before querying", async () => {
     for (const query of [
