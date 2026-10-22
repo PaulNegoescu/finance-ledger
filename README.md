@@ -215,6 +215,18 @@ and share. Uncategorized transactions remain visible. Money out includes transfe
 Category links open the matching outgoing transactions with account, dates and currency
 preserved in the URL. Transaction filters now support visible currency and flow selectors.
 
+## Category groups
+
+Use **Manage categories** to assign a category to a group. Start with **Critical spending**,
+**Nice to have**, **Savings** and **Splurge**, or expand **Category groups** to add or rename
+your own groups. A category belongs to one group or stays **Ungrouped**. Existing categories
+are not assigned automatically. Empty groups can be deleted; move their categories first.
+
+Groups organize the current category definitions, so moving a category updates historical
+report rollups too. Its transaction assignments and deterministic rules are preserved.
+Savings is an organizational label; money-out reports still include transfers and do not
+infer savings-account balances or economic expense treatment.
+||||||| 6eb38a3
 ## Export transactions
 
 Use **Export CSV** on Transactions to download all rows matching the applied filters,
