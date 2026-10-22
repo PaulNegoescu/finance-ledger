@@ -27,7 +27,13 @@ export const listLedger = createServerFn({ method: "GET" }).handler(
       };
     } catch {
       return {
-        data: { transactions: [], categories: [], rules: [], accounts: [] },
+        data: {
+          transactions: [],
+          categories: [],
+          categoryGroups: [],
+          rules: [],
+          accounts: [],
+        },
         unavailable: true as const,
       };
     }

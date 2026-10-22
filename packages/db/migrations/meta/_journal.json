@@ -15,6 +15,13 @@
       "when": 1792652780178,
       "tag": "0001_confused_ben_urich",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792655755961,
+      "tag": "0002_bored_dracula",
+      "breakpoints": true
     }
   ]
 }

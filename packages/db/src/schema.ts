@@ -15,9 +15,20 @@ export const accounts = pgTable("accounts", {
   name: text().notNull().unique(),
   currency: text().notNull(),
 });
+export const categoryGroups = pgTable(
+  "category_groups",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+  },
+  (t) => [
+    uniqueIndex("category_groups_name_key").on(sql`lower(btrim(${t.name}))`),
+  ],
+);
 export const categories = pgTable("categories", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull().unique(),
+  groupId: uuid().references(() => categoryGroups.id),
 });
 export const rules = pgTable("rules", {
   id: uuid().primaryKey().defaultRandom(),
