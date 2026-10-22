@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { currentMonthRange } from "@ledger/core/period";
+import { CashflowCharts } from "./CashflowCharts";
+import { cashflowPeriod, type CashflowPreset } from "./cashflow-data";
 import { getOverview } from "../server/overview";
 
 type Filters = { accountId?: string; from?: string; to?: string };
@@ -74,6 +76,38 @@ export function Overview({
       {!currentMonth && (
         <form onSubmit={apply}>
           <fieldset disabled={disabled}>
+            <div className="cashflow-presets" aria-label="Overview periods">
+              {(
+                [
+                  ["month", "This month"],
+                  ["previous", "Last month"],
+                  ["year", "This year"],
+                  ["all", "All time"],
+                ] as const
+              ).map(([preset, label]) => {
+                const range = cashflowPeriod(preset);
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    className="secondary"
+                    aria-pressed={
+                      filters.from === range.from && filters.to === range.to
+                    }
+                    onClick={() => {
+                      const next = {
+                        accountId: draft.accountId,
+                        ...cashflowPeriod(preset as CashflowPreset),
+                      };
+                      setDraft(next);
+                      setFilters(next);
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
             <div className="transaction-filters">
               <label>
                 Account
@@ -185,6 +219,14 @@ export function Overview({
                 </tbody>
               </table>
             </div>
+            {!currentMonth && (
+              <CashflowCharts
+                key={`${filters.accountId ?? ""}-${filters.from ?? ""}-${filters.to ?? ""}`}
+                months={result.months}
+                from={filters.from}
+                to={filters.to}
+              />
+            )}
             <details>
               <summary>Monthly totals and category spending</summary>
               <h3>Monthly totals</h3>

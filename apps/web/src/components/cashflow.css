@@ -1,0 +1,112 @@
+.cashflow-reports {
+  margin: 32px 0;
+}
+.cashflow-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.cashflow-heading h2 {
+  margin: 0;
+}
+.cashflow-heading label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+.cashflow-heading select {
+  width: auto;
+  margin: 0;
+}
+.cashflow-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+  font-size: 13px;
+}
+.cashflow-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.cashflow-legend i {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+}
+.cashflow-in {
+  fill: #16817b;
+  background: #16817b;
+}
+.cashflow-out {
+  fill: #c77945;
+  background: #c77945;
+}
+.cashflow-net {
+  background: #435a8b;
+  height: 3px !important;
+}
+.cashflow-currency {
+  border: 1px solid #d3e0e4;
+  border-radius: 4px;
+  padding: 16px;
+  margin-top: 16px;
+  min-width: 0;
+}
+.cashflow-currency h3 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+.cashflow-plot {
+  overflow-x: auto;
+}
+.cashflow-plot svg {
+  width: 100%;
+  min-width: 600px;
+  display: block;
+}
+.cashflow-grid {
+  stroke: #dce7eb;
+  stroke-width: 1;
+}
+.cashflow-tick {
+  fill: #526b76;
+  font-size: 12px;
+}
+.cashflow-line {
+  fill: none;
+  stroke: #435a8b;
+  stroke-width: 2.5;
+}
+.cashflow-point {
+  fill: #435a8b;
+}
+.cashflow-values {
+  margin-top: 12px;
+  font-size: 14px;
+}
+.cashflow-values summary {
+  cursor: pointer;
+  color: #155e63;
+}
+.cashflow-values th[scope="row"] {
+  background: transparent;
+  font-weight: 400;
+}
+.cashflow-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.cashflow-presets button {
+  padding: 7px 12px;
+}
+.cashflow-presets button[aria-pressed="true"] {
+  background: #dceef1;
+  border-color: #14676b;
+}
