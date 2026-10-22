@@ -40,6 +40,9 @@ export function PageHeader({ data, unavailable, onChanged }: Props) {
           <Link to="/comparison" activeProps={{ "aria-current": "page" }}>
             Comparison
           </Link>
+          <Link to="/trends" activeProps={{ "aria-current": "page" }}>
+            Trends
+          </Link>
           <Link to="/imports" activeProps={{ "aria-current": "page" }}>
             Import history
           </Link>

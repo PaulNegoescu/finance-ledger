@@ -10,7 +10,8 @@
     "./rule-management": "./src/rule-management.ts",
     "./overview": "./src/overview.ts",
     "./import-history": "./src/import-history.ts",
-    "./bulk-categories": "./src/bulk-categories.ts"
+    "./bulk-categories": "./src/bulk-categories.ts",
+    "./trends": "./src/trends.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",

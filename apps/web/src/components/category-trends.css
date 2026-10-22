@@ -1,0 +1,104 @@
+.category-trends {
+  display: grid;
+  gap: 24px;
+}
+.category-trends fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.trends-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+}
+.trends-heading {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.trends-heading strong {
+  color: #155e63;
+  font-size: 20px;
+}
+.trends-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.trends-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.trends-legend i {
+  height: 12px;
+  width: 12px;
+  border-radius: 2px;
+}
+.trends-chart {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-top: 8px;
+}
+.trends-chart-month {
+  flex: 1;
+  min-width: 58px;
+  text-align: center;
+  font-size: 12px;
+}
+.trends-month-total {
+  display: block;
+  min-height: 32px;
+  font-size: 10px;
+  color: #526b76;
+  overflow-wrap: anywhere;
+}
+.trends-stack {
+  height: 190px;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  background: #f3f7f8;
+  margin: 0 5px 8px;
+}
+.trends-stack > span {
+  flex-shrink: 0;
+  display: block;
+}
+.trends-note {
+  color: #526b76;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+.trends-matrix {
+  font-size: 12px;
+}
+.trends-matrix th,
+.trends-matrix td {
+  padding: 10px;
+  white-space: nowrap;
+}
+.trends-matrix th[scope="row"] {
+  text-align: left;
+  font-weight: 500;
+}
+.trends-matrix a {
+  color: #155e63;
+  text-underline-offset: 3px;
+}
+.trends-matrix tfoot {
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .trends-filters {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
