@@ -10,12 +10,15 @@ import {
   previousMonth,
 } from "@ledger/core/comparison";
 import { getComparison } from "../server/overview";
+import { comparisonDefaults } from "./report-search";
 import "./period-comparison.css";
 
 type Props = {
   accounts: { id: string; name: string; currency: string }[];
   revision: number;
   disabled: boolean;
+  initialFilters?: Partial<Filters>;
+  onFiltersChanged?: (filters: Filters) => void;
 };
 type Result = Awaited<ReturnType<typeof getComparison>>;
 type Filters = { selected: string; baseline: string; accountId: string };
@@ -38,13 +41,17 @@ function delta(selected: string, baseline: string, currency: string) {
     </>
   );
 }
-export function PeriodComparison({ accounts, revision, disabled }: Props) {
+export function PeriodComparison({
+  accounts,
+  revision,
+  disabled,
+  initialFilters,
+  onFiltersChanged,
+}: Props) {
   const [currentMonth] = useState(() => currentMonthRange().from.slice(0, 7));
-  const [draft, setDraft] = useState<Filters>({
-    selected: currentMonth,
-    baseline: previousMonth(currentMonth),
-    accountId: "",
-  });
+  const [draft, setDraft] = useState<Filters>(() =>
+    comparisonDefaults(initialFilters ?? {}, currentMonth),
+  );
   const [filters, setFilters] = useState(draft);
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +100,7 @@ export function PeriodComparison({ accounts, revision, disabled }: Props) {
       return;
     }
     setFilters({ ...draft });
+    onFiltersChanged?.({ ...draft });
   }
   const reports = result
     ? comparePeriods(result.selected, result.baseline)

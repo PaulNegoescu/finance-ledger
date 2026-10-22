@@ -12,6 +12,10 @@ type Props = {
   revision: number;
   disabled: boolean;
   currentMonth?: boolean;
+  initialFilters?: Filters;
+  chartYear?: string;
+  onFiltersChanged?: (filters: Filters) => void;
+  onChartYearChanged?: (year: string) => void;
 };
 // Avoid floating-point conversion even when a sum exceeds Number.MAX_SAFE_INTEGER.
 function amount(minor: string, currency: string) {
@@ -24,9 +28,15 @@ export function Overview({
   revision,
   disabled,
   currentMonth = false,
+  initialFilters,
+  chartYear,
+  onFiltersChanged,
+  onChartYearChanged,
 }: Props) {
   const [period] = useState(() => currentMonthRange());
-  const initial = currentMonth ? { from: period.from, to: period.to } : {};
+  const initial = currentMonth
+    ? { from: period.from, to: period.to }
+    : (initialFilters ?? {});
   const [draft, setDraft] = useState<Filters>(initial);
   const [filters, setFilters] = useState<Filters>(initial);
   const [result, setResult] = useState<Summary | null>(null);
@@ -69,6 +79,7 @@ export function Overview({
       return;
     }
     setFilters({ ...draft });
+    onFiltersChanged?.({ ...draft });
   }
   return (
     <section className="panel" aria-label="Financial overview">
@@ -101,6 +112,7 @@ export function Overview({
                       };
                       setDraft(next);
                       setFilters(next);
+                      onFiltersChanged?.(next);
                     }}
                   >
                     {label}
@@ -165,6 +177,7 @@ export function Overview({
                 onClick={() => {
                   setDraft({});
                   setFilters({});
+                  onFiltersChanged?.({});
                 }}
               >
                 Clear overview filters
@@ -222,6 +235,8 @@ export function Overview({
             {!currentMonth && (
               <CashflowCharts
                 key={`${filters.accountId ?? ""}-${filters.from ?? ""}-${filters.to ?? ""}`}
+                selectedChartYear={chartYear}
+                onChartYearChanged={onChartYearChanged}
                 months={result.months}
                 from={filters.from}
                 to={filters.to}

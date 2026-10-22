@@ -11,12 +11,32 @@ type Props = {
   accounts: { id: string; name: string; currency: string }[];
   revision: number;
   disabled: boolean;
+  initialFilters?: Filters;
+  initialCurrency?: string;
+  onFiltersChanged?: (filters: Filters) => void;
+  onCurrencyChanged?: (currency: string) => void;
 };
-export function Spending({ accounts, revision, disabled }: Props) {
-  const [draft, setDraft] = useState<Filters>({});
-  const [filters, setFilters] = useState<Filters>({});
+export function Spending({
+  accounts,
+  revision,
+  disabled,
+  initialFilters = {},
+  initialCurrency,
+  onFiltersChanged,
+  onCurrencyChanged,
+}: Props) {
+  const [draft, setDraft] = useState<Filters>(initialFilters);
+  const [filters, setFilters] = useState<Filters>(initialFilters);
   const [result, setResult] = useState<Summary | null>(null);
-  const [currency, setCurrency] = useState("");
+  const [currency, setCurrency] = useState(initialCurrency ?? "");
+  useEffect(() => {
+    setCurrency(
+      initialCurrency ??
+        result?.categories[0]?.currency ??
+        result?.totals[0]?.currency ??
+        "",
+    );
+  }, [initialCurrency, result]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [validation, setValidation] = useState("");
@@ -36,11 +56,6 @@ export function Spending({ accounts, revision, disabled }: Props) {
       .then((data) => {
         if (request.current !== id) return;
         setResult(data);
-        setCurrency((current) =>
-          data.totals.some((row) => row.currency === current)
-            ? current
-            : (data.categories[0]?.currency ?? data.totals[0]?.currency ?? ""),
-        );
       })
       .catch(() => {
         if (request.current === id)
@@ -61,6 +76,7 @@ export function Spending({ accounts, revision, disabled }: Props) {
     }
     setValidation("");
     setFilters({ ...draft });
+    onFiltersChanged?.({ ...draft });
   }
   const report = spendingReport(result?.categories ?? [], currency);
   return (
@@ -125,6 +141,7 @@ export function Spending({ accounts, revision, disabled }: Props) {
                 onClick={() => {
                   setDraft({});
                   setFilters({});
+                  onFiltersChanged?.({});
                   setValidation("");
                 }}
               >
@@ -170,8 +187,14 @@ export function Spending({ accounts, revision, disabled }: Props) {
               Currency
               <select
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                onChange={(e) => {
+                  setCurrency(e.target.value);
+                  onCurrencyChanged?.(e.target.value);
+                }}
               >
+                {!result.totals.some((row) => row.currency === currency) && (
+                  <option value={currency}>{currency}</option>
+                )}
                 {result.totals.map((row) => (
                   <option key={row.currency}>{row.currency}</option>
                 ))}
