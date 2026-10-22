@@ -187,9 +187,11 @@ export function PeriodComparison({ accounts, revision, disabled }: Props) {
           </button>
         </p>
       )}
-      <div role="status" aria-live="polite">
-        {loading && <p>Loading comparison…</p>}
-      </div>
+      {loading && (
+        <p role="status" aria-live="polite">
+          Loading comparison…
+        </p>
+      )}
       {!loading && result && (
         <>
           {(filters.selected === currentMonth ||

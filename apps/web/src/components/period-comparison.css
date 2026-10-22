@@ -2,6 +2,10 @@
   display: grid;
   gap: 24px;
 }
+.comparison-report > .notice,
+.comparison-report > [role="status"] {
+  margin: 0;
+}
 .comparison-report fieldset {
   border: 0;
   padding: 0;
