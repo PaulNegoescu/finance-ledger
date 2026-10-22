@@ -6,6 +6,8 @@ import { assignCategory } from "../server/functions";
 import { listTransactions } from "../server/transactions";
 
 type Filters = {
+  currency?: string;
+  flow?: "in" | "out";
   search: string;
   accountId?: string;
   categoryId?: string;
@@ -18,6 +20,8 @@ type Props = {
   categories: { id: string; name: string }[];
   accounts: { id: string; name: string; currency: string }[];
   importId?: string;
+  initialFilters?: Partial<Filters>;
+  onFiltersChanged?: (filters: Filters) => void;
   revision: number;
   disabled: boolean;
   onAssigned: () => Promise<void>;
@@ -32,9 +36,15 @@ export function Transactions({
   disabled,
   onAssigned,
   importId,
+  initialFilters,
+  onFiltersChanged,
 }: Props) {
-  const [draft, setDraft] = useState<Filters>(emptyFilters);
-  const [query, setQuery] = useState({ filters: emptyFilters, page: 1 });
+  const [initial] = useState<Filters>(() => ({
+    ...emptyFilters,
+    ...initialFilters,
+  }));
+  const [draft, setDraft] = useState<Filters>(initial);
+  const [query, setQuery] = useState({ filters: initial, page: 1 });
   const [result, setResult] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,14 +114,13 @@ export function Transactions({
     setMessage("");
     setSelected([]);
     setBulkCategory("");
-    setQuery({
-      filters: {
-        ...draft,
-        search: draft.search.trim(),
-        categoryId: draft.uncategorized ? undefined : draft.categoryId,
-      },
-      page: 1,
-    });
+    const filters = {
+      ...draft,
+      search: draft.search.trim(),
+      categoryId: draft.uncategorized ? undefined : draft.categoryId,
+    };
+    setQuery({ filters, page: 1 });
+    onFiltersChanged?.(filters);
   }
 
   async function assign(id: string, categoryId: string | null) {
@@ -262,6 +271,46 @@ export function Transactions({
               </select>
             </label>
             <label>
+              Currency
+              <select
+                value={draft.currency ?? ""}
+                onChange={(e) =>
+                  setDraft((current) => ({
+                    ...current,
+                    currency: e.target.value || undefined,
+                  }))
+                }
+              >
+                <option value="">All currencies</option>
+                {[
+                  ...new Set([
+                    ...accounts.map((account) => account.currency),
+                    ...(draft.currency ? [draft.currency] : []),
+                  ]),
+                ]
+                  .sort()
+                  .map((currency) => (
+                    <option key={currency}>{currency}</option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              Flow
+              <select
+                value={draft.flow ?? ""}
+                onChange={(e) =>
+                  setDraft((current) => ({
+                    ...current,
+                    flow: (e.target.value || undefined) as Filters["flow"],
+                  }))
+                }
+              >
+                <option value="">All transactions</option>
+                <option value="in">Money in</option>
+                <option value="out">Money out</option>
+              </select>
+            </label>
+            <label>
               Category
               <select
                 name="categoryId"
@@ -338,6 +387,7 @@ export function Transactions({
                 setBulkCategory("");
                 setDraft(emptyFilters);
                 setQuery({ filters: emptyFilters, page: 1 });
+                onFiltersChanged?.(emptyFilters);
                 setMessage("");
               }}
             >

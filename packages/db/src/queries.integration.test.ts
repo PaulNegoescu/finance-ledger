@@ -61,6 +61,57 @@ describe.skipIf(!url)("Transaction queries (synthetic data)", () => {
       (await queries.listTransactions(input)).transactions.map((t) => t.id),
     ).toEqual(first.transactions.map((t) => t.id));
   });
+  it("keeps category report drilldowns isolated by currency and cash-flow direction", async () => {
+    const [category] = await ledger.addCategory({
+      name: `${prefix}-report-currency`,
+    });
+    for (const currency of ["RON", "EUR"]) {
+      const account = `${prefix}-report-${currency}`;
+      await ledger.importCsv({
+        account,
+        currency,
+        csv: `Date;Description;Amount;Currency;Reference\n2026-03-01;Fictional report payment;-5.00;${currency};${prefix}-out-${currency}\n2026-03-01;Fictional report refund;2.00;${currency};${prefix}-in-${currency}`,
+      });
+      const reportAccount = (await ledger.metadata()).accounts.find(
+        (row) => row.name === account,
+      )!;
+      const rows = await queries.listTransactions({
+        accountId: reportAccount.id,
+        currency,
+      });
+      for (const row of rows.transactions.filter(
+        (row) => row.account === account,
+      ))
+        await ledger.assign({ id: row.id, categoryId: category.id });
+    }
+    const out = await queries.listTransactions({
+      categoryId: category.id,
+      currency: "RON",
+      flow: "out",
+    });
+    expect(out.total).toBe(1);
+    expect(out.transactions[0]).toMatchObject({
+      currency: "RON",
+      amountMinor: -500,
+    });
+    const incoming = await queries.listTransactions({
+      categoryId: category.id,
+      currency: "EUR",
+      flow: "in",
+    });
+    expect(incoming.total).toBe(1);
+    expect(incoming.transactions[0].amountMinor).toBe(200);
+    expect(
+      (await queries.listTransactions({ categoryId: category.id, flow: "out" }))
+        .total,
+    ).toBe(2);
+    await expect(
+      queries.listTransactions({ currency: "ron" }),
+    ).rejects.toThrow();
+    await expect(
+      queries.listTransactions({ flow: "invalid" }),
+    ).rejects.toThrow();
+  });
   it("applies literal search, category, uncategorized and inclusive date filters to the whole account", async () => {
     const literal = await queries.listTransactions({ accountId, search: "%_" });
     expect(literal.total).toBe(1);

@@ -1,3 +1,4 @@
+export { overviewInput, comparisonInput } from "./report-validation";
 import { z } from "zod";
 export const importInput = z.object({
   adapterId: z.string().min(1).max(80).default("ing"),
@@ -40,19 +41,31 @@ const filterDate = z
       new Date(value).toISOString().slice(0, 10) === value,
     "Invalid date",
   );
-export const transactionQuery = z
-  .object({
+const transactionFilters = z.object({
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/)
+    .optional(),
+  flow: z.enum(["in", "out"]).optional(),
+  search: z.string().trim().max(200).optional(),
+  accountId: z.uuid().optional(),
+  importId: z.uuid().optional(),
+  categoryId: z.uuid().optional(),
+  uncategorized: z.boolean().optional(),
+  from: filterDate.optional(),
+  to: filterDate.optional(),
+});
+const validRange = (data: { from?: string; to?: string }) =>
+  !data.from || !data.to || data.from <= data.to;
+export const transactionSearch = transactionFilters.refine(
+  validRange,
+  "Start date must not follow end date",
+);
+export const transactionQuery = transactionFilters
+  .extend({
     page: z.number().int().min(1).max(1_000_000).default(1),
     pageSize: z.number().int().min(1).max(100).default(25),
     search: z.string().trim().max(200).default(""),
-    accountId: z.uuid().optional(),
-    importId: z.uuid().optional(),
-    categoryId: z.uuid().optional(),
     uncategorized: z.boolean().default(false),
-    from: filterDate.optional(),
-    to: filterDate.optional(),
   })
-  .refine(
-    (data) => !data.from || !data.to || data.from <= data.to,
-    "Start date must not follow end date",
-  );
+  .refine(validRange, "Start date must not follow end date");
