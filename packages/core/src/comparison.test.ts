@@ -35,6 +35,9 @@ it("computes exact deltas beyond floating point and handles absent baselines", (
     "No baseline",
   );
   expect(periodChange("-50", "-100").percentTenths).toBe("500");
+  expect(percentageChange("0", "1")).toBe("+<0.1%");
+  expect(percentageChange("0", "-1")).toBe("−<0.1%");
+  expect(percentageChange("0", "0")).toBe("0.0%");
   expect(comparisonAmount("9007199254740993123", "RON")).toBe(
     "RON 90,071,992,547,409,931.23",
   );

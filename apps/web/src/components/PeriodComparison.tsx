@@ -34,7 +34,7 @@ function delta(selected: string, baseline: string, currency: string) {
         {BigInt(change.difference) > 0n ? "+" : ""}
         {comparisonAmount(change.difference, currency)}
       </span>
-      <small>{percentageChange(change.percentTenths)}</small>
+      <small>{percentageChange(change.percentTenths, change.difference)}</small>
     </>
   );
 }

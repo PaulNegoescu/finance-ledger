@@ -45,9 +45,11 @@ export function periodChange(selected: string, baseline: string) {
     percentTenths: percentTenths?.toString() ?? null,
   };
 }
-export function percentageChange(tenths: string | null) {
+export function percentageChange(tenths: string | null, difference = "0") {
   if (tenths === null) return "No baseline";
   const value = BigInt(tenths);
+  if (value === 0n && BigInt(difference) !== 0n)
+    return `${BigInt(difference) > 0n ? "+" : "−"}<0.1%`;
   const absolute = value < 0n ? -value : value;
   return `${value > 0n ? "+" : value < 0n ? "−" : ""}${absolute / 10n}.${absolute % 10n}%`;
 }
