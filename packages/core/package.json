@@ -8,6 +8,7 @@
     "./validation": "./src/validation.ts",
     "./period": "./src/period.ts",
     "./comparison": "./src/comparison.ts",
+    "./csv": "./src/transaction-csv.ts",
     "./trends": "./src/trends.ts"
   },
   "scripts": {

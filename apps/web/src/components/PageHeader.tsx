@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { RuleManager } from "./RuleManager";
 type Props = {
   data: {
-    categories: { id: string; name: string }[];
+    categories: { id: string; name: string; groupId?: string | null }[];
+    categoryGroups?: { id: string; name: string }[];
     rules: {
       id: string;
       contains: string;
@@ -49,6 +50,7 @@ export function PageHeader({ data, unavailable, onChanged }: Props) {
         </nav>
         <RuleManager
           categories={data.categories}
+          groups={data.categoryGroups ?? []}
           rules={data.rules}
           disabled={unavailable}
           onChanged={onChanged}
