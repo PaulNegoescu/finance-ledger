@@ -21,6 +21,7 @@ export function createQueries(url: string) {
     listTransactions: async (input: unknown) => {
       const query = transactionQuery.parse(input);
       const conditions = [
+        query.importId ? eq(transactions.importId, query.importId) : undefined,
         query.accountId
           ? eq(transactions.accountId, query.accountId)
           : undefined,

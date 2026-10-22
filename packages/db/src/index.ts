@@ -177,7 +177,14 @@ export function createLedger(url: string) {
           throw new Error("Contul existent are altă valută.");
         const [batch] = await tx
           .insert(schema.imports)
-          .values({ accountId: account.id, hash: hash(data.csv) })
+          .values({
+            accountId: account.id,
+            hash: hash(data.csv),
+            adapterId: data.adapterId,
+            format: data.format,
+            inputCount: rows.length,
+            skippedCount: 0,
+          })
           .onConflictDoNothing()
           .returning();
         if (!batch) return { inserted: 0, skipped: rows.length };
@@ -199,6 +206,10 @@ export function createLedger(url: string) {
             .returning({ id: schema.transactions.id });
           inserted += saved.length;
         }
+        await tx
+          .update(schema.imports)
+          .set({ skippedCount: rows.length - inserted })
+          .where(eq(schema.imports.id, batch.id));
         return { inserted, skipped: rows.length - inserted };
       });
     },

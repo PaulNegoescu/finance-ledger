@@ -46,6 +46,7 @@ export const transactionQuery = z
     pageSize: z.number().int().min(1).max(100).default(25),
     search: z.string().trim().max(200).default(""),
     accountId: z.uuid().optional(),
+    importId: z.uuid().optional(),
     categoryId: z.uuid().optional(),
     uncategorized: z.boolean().default(false),
     from: filterDate.optional(),

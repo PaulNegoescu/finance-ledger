@@ -5,6 +5,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { createLedger } from "./index";
+import { createQueries } from "./queries";
 import { createImportHistory } from "./import-history";
 const url = process.env.TEST_DATABASE_URL;
 describe.skipIf(!url)("Import history (synthetic data)", () => {
@@ -68,18 +69,92 @@ describe.skipIf(!url)("Import history (synthetic data)", () => {
       ),
     ).toBe(true);
     for (const batch of result.imports) {
-      expect(Object.keys(batch).sort()).toEqual([
-        "account",
-        "createdAt",
-        "currency",
-        "id",
-        "transactionCount",
-      ]);
+      expect(Object.keys(batch).sort()).toEqual(
+        [
+          "account",
+          "adapterId",
+          "format",
+          "inputCount",
+          "skippedCount",
+          "createdAt",
+          "currency",
+          "id",
+          "transactionCount",
+        ].sort(),
+      );
+      expect(batch.adapterId).toBe("ing");
+      expect(batch.format).toBe("csv");
+      expect(batch.inputCount).toBe(
+        batch.transactionCount + batch.skippedCount!,
+      );
       expect(Number.isFinite(Date.parse(batch.createdAt))).toBe(true);
     }
     const other = await history.list({ accountId: secondAccountId });
     expect(other.total).toBe(1);
     expect(other.imports[0].transactionCount).toBe(2);
+  });
+  it("opens exactly the transactions added by each batch and composes filters", async () => {
+    const queries = createQueries(url!);
+    try {
+      const result = await history.list({ accountId });
+      for (const batch of result.imports) {
+        const page = await queries.listTransactions({ importId: batch.id });
+        expect(page.total).toBe(batch.transactionCount);
+        expect(
+          page.transactions.every((row) => row.importId === batch.id),
+        ).toBe(true);
+        expect(
+          (
+            await queries.listTransactions({
+              importId: batch.id,
+              accountId: secondAccountId,
+            })
+          ).total,
+        ).toBe(0);
+        expect(
+          (
+            await queries.listTransactions({
+              importId: batch.id,
+              search: "absent text",
+            })
+          ).total,
+        ).toBe(0);
+      }
+      expect(
+        (await queries.listTransactions({ importId: randomUUID() })).total,
+      ).toBe(0);
+      await expect(
+        queries.listTransactions({ importId: "invalid" }),
+      ).rejects.toThrow();
+    } finally {
+      await queries.close();
+    }
+  });
+  it("keeps legacy counts unavailable and enforces atomic count pairs", async () => {
+    const client = postgres(url!, { max: 1 });
+    try {
+      const [account] =
+        await client`insert into accounts (name, currency) values (${prefix + "-legacy"}, 'RON') returning id`;
+      const [batch] =
+        await client`insert into imports ("accountId", hash) values (${account.id}, 'synthetic-legacy') returning id`;
+      const result = await history.list({ accountId: account.id });
+      expect(result.imports[0]).toMatchObject({
+        id: batch.id,
+        adapterId: "ing",
+        format: "csv",
+        inputCount: null,
+        skippedCount: null,
+        transactionCount: 0,
+      });
+      await expect(
+        client`update imports set "inputCount" = 2 where id = ${batch.id}`,
+      ).rejects.toThrow();
+      await expect(
+        client`update imports set "inputCount" = 2, "skippedCount" = 3 where id = ${batch.id}`,
+      ).rejects.toThrow();
+    } finally {
+      await client.end();
+    }
   });
   it("paginates stably and clamps an out-of-range page", async () => {
     const firstPage = await history.list({ accountId, pageSize: 2 });

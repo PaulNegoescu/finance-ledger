@@ -139,8 +139,11 @@ combined; SQL aggregates remain exact integer strings and display uses BigInt.
 
 Import history lists saved batches with account, currency, import time and the number
 of transactions actually added. Exact-file reimports create no new batch; distinct
-fully overlapping exports can show a zero-transaction batch. Original row counts and
-skipped counts were not stored, so history does not invent them. Raw CSV data and hashes
+fully overlapping exports can show a zero-transaction batch. New imports save the source bank/format, logical input transaction count and skipped
+duplicate count in the same transaction as the ledger rows. Older imports show an em dash
+for unavailable skipped counts. **View transactions** opens the rows added by that batch;
+fully overlapping exports correctly open an empty list. The batch filter can be combined
+with transaction filters, and **Show all transactions** exits it. Raw CSV data and hashes
 are not exposed. History is read-only and supports account filtering and pagination.
 
 Select transaction checkboxes on the current page to reveal bulk category controls.
@@ -191,3 +194,6 @@ multiple formats and asynchronous binary handlers using a fictional adapter. ING
 parsing is not implemented yet. The current browser upload and server request remain
 CSV-only, with `adapterId: "ing"` and `format: "csv"` defaults for existing callers;
 a future binary upload endpoint can use the same registry contract.
+
+Import file identity is scoped to account, bank adapter and format. The migration preserves
+existing hashes and treats earlier imports as ING CSV; historical counts remain null.
