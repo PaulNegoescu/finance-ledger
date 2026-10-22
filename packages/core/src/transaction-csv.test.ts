@@ -13,6 +13,7 @@ const row: TransactionCsvRow = {
   amountMinor: "-12345",
   currency: "RON",
   category: null,
+  categoryGroup: null,
   categorySource: "unassigned",
   reference: "DEMO",
 };
@@ -28,6 +29,7 @@ it("exports UTF-8 CSV with quoted multiline text, CRLF and exact monetary decima
       Amount: "-123.45",
       Currency: "RON",
       Category: "Uncategorized",
+      "Category group": "Ungrouped",
       "Category source": "unassigned",
       Reference: "DEMO",
       "Transaction ID": row.id,
@@ -50,6 +52,8 @@ it("neutralizes spreadsheet formulas in every untrusted text field without chang
     "\r=1+1",
     "\n=1+1",
     "\tplain",
+    "\0=1+1",
+    "\u001f=1+1",
   ]) {
     const [parsed] = parse(
       transactionCsv([
@@ -58,12 +62,19 @@ it("neutralizes spreadsheet formulas in every untrusted text field without chang
           account: formula,
           description: formula,
           category: formula,
+          categoryGroup: formula,
           reference: formula,
         },
       ]),
       { bom: true, columns: true },
     ) as Record<string, string>[];
-    for (const field of ["Account", "Description", "Category", "Reference"])
+    for (const field of [
+      "Account",
+      "Description",
+      "Category",
+      "Category group",
+      "Reference",
+    ])
       expect(parsed[field]).toBe("'" + formula);
     expect(parsed.Amount).toBe("-123.45");
   }

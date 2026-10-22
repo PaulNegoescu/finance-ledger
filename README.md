@@ -221,7 +221,7 @@ Use **Export CSV** on Transactions to download all rows matching the applied fil
 including account, category, currency, money-in/out, date, description search and import
 batch. Draft changes and checkbox selection do not change the export. The export uses
 a consistent database snapshot and stable date/ID ordering; amounts remain exact decimal
-strings. CSV includes category names, assignment sources and references, without import
+strings. CSV includes category and group names, assignment sources and references, without import
 hashes or raw source files. Empty selections download headers only.
 
 An export supports up to 10,000 transactions. Larger selections fail with a request to

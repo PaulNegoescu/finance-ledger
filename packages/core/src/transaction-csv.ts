@@ -7,6 +7,7 @@ export type TransactionCsvRow = {
   amountMinor: string;
   currency: string;
   category: string | null;
+  categoryGroup: string | null;
   categorySource: string;
   reference: string;
 };
@@ -19,7 +20,9 @@ function cell(value: string, text = true) {
   // Quote CSV syntax separately from spreadsheet formulas. Quoting alone does
   // not stop formulas when a spreadsheet opens a CSV file.
   const safe =
-    text && (/^[\s\uFEFF]*[=+@-]/u.test(value) || /^[\t\r\n]/.test(value))
+    text &&
+    (/^[\s\u0000-\u0020\u007f-\u009f\uFEFF]*[=+@-]/u.test(value) ||
+      /^[\t\r\n]/.test(value))
       ? `'${value}`
       : value;
   return `"${safe.replaceAll('"', '\"\"')}"`;
@@ -32,6 +35,7 @@ export function transactionCsv(rows: readonly TransactionCsvRow[]) {
     "Amount",
     "Currency",
     "Category",
+    "Category group",
     "Category source",
     "Reference",
     "Transaction ID",
@@ -46,6 +50,7 @@ export function transactionCsv(rows: readonly TransactionCsvRow[]) {
         cell(decimalAmount(row.amountMinor), false),
         cell(row.currency),
         cell(row.category ?? "Uncategorized"),
+        cell(row.categoryGroup ?? "Ungrouped"),
         cell(row.categorySource),
         cell(row.reference),
         cell(row.id),

@@ -16,7 +16,7 @@ import {
   transactionQuery,
   transactionExportInput,
 } from "@ledger/core/validation";
-import { accounts, transactions, categories } from "./schema";
+import { accounts, transactions, categories, categoryGroups } from "./schema";
 
 import { transactionCsv, transactionExportLimit } from "@ledger/core/csv";
 import type { z } from "zod";
@@ -76,12 +76,14 @@ export function createQueries(url: string) {
               amountMinor: sql<string>`${transactions.amountMinor}::text`,
               currency: transactions.currency,
               category: categories.name,
+              categoryGroup: categoryGroups.name,
               categorySource: transactions.categorySource,
               reference: transactions.reference,
             })
             .from(transactions)
             .innerJoin(accounts, eq(transactions.accountId, accounts.id))
             .leftJoin(categories, eq(transactions.categoryId, categories.id))
+            .leftJoin(categoryGroups, eq(categories.groupId, categoryGroups.id))
             .where(where)
             .orderBy(desc(transactions.date), desc(transactions.id));
         },

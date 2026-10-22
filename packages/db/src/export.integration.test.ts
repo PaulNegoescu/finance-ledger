@@ -17,6 +17,7 @@ describe.skipIf(!url)("CSV exports (fictional data)", () => {
   const prefix = `export-${randomUUID()}`;
   const accountIds: string[] = [];
   const categoryIds: string[] = [];
+  const groupIds: string[] = [];
   beforeAll(async () => {
     client = postgres(url!, { max: 1, onnotice: () => {} });
     await migrate(drizzle(client), {
@@ -48,6 +49,8 @@ describe.skipIf(!url)("CSV exports (fictional data)", () => {
       }
       for (const id of categoryIds)
         await client`delete from categories where id=${id}`;
+      for (const id of groupIds)
+        await client`delete from category_groups where id=${id}`;
       await client.end();
     }
     await ledger?.close();
@@ -74,7 +77,9 @@ describe.skipIf(!url)("CSV exports (fictional data)", () => {
       lines
         .slice(1)
         .every((line) =>
-          line.includes('"-1.00","RON","Uncategorized","unassigned"'),
+          line.includes(
+            '"-1.00","RON","Uncategorized","Ungrouped","unassigned"',
+          ),
         ),
     ).toBe(true);
     expect((await queries.exportTransactions({ accountId })).csv).toBe(
@@ -84,6 +89,10 @@ describe.skipIf(!url)("CSV exports (fictional data)", () => {
   it("uses exactly the list filters, including literal search, category, direction, currency and batch", async () => {
     const [category] = await ledger.addCategory({ name: `@${prefix}` });
     categoryIds.push(category.id);
+    const [group] =
+      await client`insert into category_groups (name) values (${"+Fictional group " + prefix}) returning id`;
+    groupIds.push(group.id);
+    await client`update categories set "groupId"=${group.id} where id=${category.id}`;
     for (const currency of ["RON", "EUR"]) {
       const name = `${prefix}-${currency}`;
       await ledger.importCsv({
@@ -116,6 +125,7 @@ describe.skipIf(!url)("CSV exports (fictional data)", () => {
     expect(result.count).toBe(1);
     expect(result.csv).toContain('"-5.00","RON","\'@');
     expect(result.csv).toContain('"manual"');
+    expect(result.csv).toContain("\"'+Fictional group ");
     expect(result.csv).toContain(list.transactions[0].id);
     expect(
       (await queries.exportTransactions({ ...filters, uncategorized: true }))
