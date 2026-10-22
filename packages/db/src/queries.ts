@@ -6,6 +6,8 @@ import {
   eq,
   gte,
   lte,
+  lt,
+  gt,
   isNull,
   sql,
   getTableColumns,
@@ -21,6 +23,12 @@ export function createQueries(url: string) {
     listTransactions: async (input: unknown) => {
       const query = transactionQuery.parse(input);
       const conditions = [
+        query.currency ? eq(transactions.currency, query.currency) : undefined,
+        query.flow === "in"
+          ? gt(transactions.amountMinor, 0)
+          : query.flow === "out"
+            ? lt(transactions.amountMinor, 0)
+            : undefined,
         query.importId ? eq(transactions.importId, query.importId) : undefined,
         query.accountId
           ? eq(transactions.accountId, query.accountId)

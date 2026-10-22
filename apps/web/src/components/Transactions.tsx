@@ -6,6 +6,8 @@ import { assignCategory } from "../server/functions";
 import { listTransactions } from "../server/transactions";
 
 type Filters = {
+  currency?: string;
+  flow?: "in" | "out";
   search: string;
   accountId?: string;
   categoryId?: string;
@@ -266,6 +268,46 @@ export function Transactions({
                     {account.name} ({account.currency})
                   </option>
                 ))}
+              </select>
+            </label>
+            <label>
+              Currency
+              <select
+                value={draft.currency ?? ""}
+                onChange={(e) =>
+                  setDraft((current) => ({
+                    ...current,
+                    currency: e.target.value || undefined,
+                  }))
+                }
+              >
+                <option value="">All currencies</option>
+                {[
+                  ...new Set([
+                    ...accounts.map((account) => account.currency),
+                    ...(draft.currency ? [draft.currency] : []),
+                  ]),
+                ]
+                  .sort()
+                  .map((currency) => (
+                    <option key={currency}>{currency}</option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              Flow
+              <select
+                value={draft.flow ?? ""}
+                onChange={(e) =>
+                  setDraft((current) => ({
+                    ...current,
+                    flow: (e.target.value || undefined) as Filters["flow"],
+                  }))
+                }
+              >
+                <option value="">All transactions</option>
+                <option value="in">Money in</option>
+                <option value="out">Money out</option>
               </select>
             </label>
             <label>

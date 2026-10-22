@@ -41,6 +41,11 @@ const filterDate = z
     "Invalid date",
   );
 const transactionFilters = z.object({
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/)
+    .optional(),
+  flow: z.enum(["in", "out"]).optional(),
   search: z.string().trim().max(200).optional(),
   accountId: z.uuid().optional(),
   importId: z.uuid().optional(),

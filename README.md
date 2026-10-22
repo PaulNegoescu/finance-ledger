@@ -205,3 +205,12 @@ filters alongside the import filter. Applying or clearing filters updates the UR
 reloading a report drill-down preserves its selection. Use browser back/forward to
 return to previous filter selections. Pagination and checkbox selections reset when
 the filter selection changes.
+
+## Spending report
+
+**Spending** shows money out by category for the selected account and date range.
+Choose one currency at a time. The chart ranks the largest eight categories and combines
+any remaining categories into one bar; the table lists every category with its exact amount
+and share. Uncategorized transactions remain visible. Money out includes transfers.
+Category links open the matching outgoing transactions with account, dates and currency
+preserved in the URL. Transaction filters now support visible currency and flow selectors.
