@@ -1,4 +1,6 @@
 import { useState } from "react";
+import "./category-groups.css";
+import { CategoryGroupsEditor } from "./CategoryGroupsEditor";
 import { Modal } from "./Modal";
 import {
   applyRules,
@@ -10,7 +12,7 @@ import {
   updateRule,
 } from "../server/rules";
 
-type Category = { id: string; name: string };
+type Category = { id: string; name: string; groupId?: string | null };
 type Rule = {
   id: string;
   contains: string;
@@ -19,12 +21,19 @@ type Rule = {
 };
 type Props = {
   categories: Category[];
+  groups?: { id: string; name: string }[];
   rules: Rule[];
   disabled: boolean;
   onChanged: () => Promise<void>;
 };
 
-export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
+export function RuleManager({
+  categories,
+  groups = [],
+  rules,
+  disabled,
+  onChanged,
+}: Props) {
   const [mode, setMode] = useState<"categories" | "rules" | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -51,7 +60,7 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
       }
     } catch {
       setMessage(
-        "Unable to save changes. Check your connection, use a unique category name, and remove any category assignments before deleting a category.",
+        "Unable to save changes. Check your connection, use unique category and group names, and clear category assignments or group memberships before deleting.",
       );
     } finally {
       setBusy(false);
@@ -104,7 +113,10 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
                   const values = new FormData(form);
                   void run(async () => {
                     await createCategory({
-                      data: { name: String(values.get("name")) },
+                      data: {
+                        name: String(values.get("name")),
+                        groupId: String(values.get("groupId")) || null,
+                      },
                     });
                     form.reset();
                     return "Category added.";
@@ -121,9 +133,26 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
                       required
                     />
                   </label>
+                  <label>
+                    Group
+                    <select name="groupId" defaultValue="">
+                      <option value="">Ungrouped</option>
+                      {groups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button>Add category</button>
                 </fieldset>
               </form>
+              <CategoryGroupsEditor
+                groups={groups}
+                categories={categories}
+                locked={locked}
+                run={run}
+              />
               {categories.length > 0 && (
                 <ul className="management-list" aria-label="Categories">
                   {categories.map((category) => (
@@ -134,7 +163,7 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
                             event.preventDefault();
                             void run(async () => {
                               await updateCategory({ data: editingCategory });
-                              return "Category renamed.";
+                              return "Category updated.";
                             });
                           }}
                         >
@@ -153,6 +182,25 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
                                 required
                               />
                             </label>
+                            <label>
+                              Group
+                              <select
+                                value={editingCategory.groupId ?? ""}
+                                onChange={(event) =>
+                                  setEditingCategory({
+                                    ...editingCategory,
+                                    groupId: event.target.value || null,
+                                  })
+                                }
+                              >
+                                <option value="">Ungrouped</option>
+                                {groups.map((group) => (
+                                  <option key={group.id} value={group.id}>
+                                    {group.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
                             <div className="actions">
                               <button>Save category</button>
                               <button
@@ -167,7 +215,14 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
                         </form>
                       ) : (
                         <div className="management-row">
-                          <span>{category.name}</span>
+                          <span>
+                            {category.name}
+                            <small className="category-group-label">
+                              {groups.find(
+                                (group) => group.id === category.groupId,
+                              )?.name ?? "Ungrouped"}
+                            </small>
+                          </span>
                           <div className="actions">
                             <button
                               type="button"
@@ -178,7 +233,7 @@ export function RuleManager({ categories, rules, disabled, onChanged }: Props) {
                                 setRemoving(null);
                               }}
                             >
-                              Rename
+                              Edit
                             </button>
                             <button
                               type="button"

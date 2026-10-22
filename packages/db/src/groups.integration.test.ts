@@ -61,7 +61,8 @@ describe.skipIf(!url)("Category groups (synthetic data)", () => {
     const meta = await ledger.metadata();
     const account = meta.accounts.find((row) => row.name === prefix)!;
     expect(meta.categoryGroups.some((row) => row.id === group.id)).toBe(true);
-    const before = (await queries.listTransactions({ accountId: account.id })).transactions[0];
+    const before = (await queries.listTransactions({ accountId: account.id }))
+      .transactions[0];
     expect(before.categoryId).toBe(category.id);
     expect(before.ruleId).toBe(rule.id);
     const report = await overview.summarize({ accountId: account.id });
@@ -94,7 +95,8 @@ describe.skipIf(!url)("Category groups (synthetic data)", () => {
       group: "Ungrouped",
       expenseMinor: "1234",
     });
-    const after = (await queries.listTransactions({ accountId: account.id })).transactions[0];
+    const after = (await queries.listTransactions({ accountId: account.id }))
+      .transactions[0];
     expect([after.categoryId, after.ruleId, after.categorySource]).toEqual([
       before.categoryId,
       before.ruleId,
