@@ -56,16 +56,19 @@ const transactionFilters = z.object({
   accountId: z.uuid().optional(),
   importId: z.uuid().optional(),
   categoryId: z.uuid().optional(),
+  groupId: z.uuid().optional(),
+  ungrouped: z.boolean().optional(),
   uncategorized: z.boolean().optional(),
   from: filterDate.optional(),
   to: filterDate.optional(),
 });
+const validGroup = (data: { groupId?: string; ungrouped?: boolean }) =>
+  !data.groupId || !data.ungrouped;
 const validRange = (data: { from?: string; to?: string }) =>
   !data.from || !data.to || data.from <= data.to;
-export const transactionSearch = transactionFilters.refine(
-  validRange,
-  "Start date must not follow end date",
-);
+export const transactionSearch = transactionFilters
+  .refine(validRange, "Start date must not follow end date")
+  .refine(validGroup, "Select a group or ungrouped categories, never both");
 export const transactionQuery = transactionFilters
   .extend({
     page: z.number().int().min(1).max(1_000_000).default(1),
@@ -73,6 +76,7 @@ export const transactionQuery = transactionFilters
     search: z.string().trim().max(200).default(""),
     uncategorized: z.boolean().default(false),
   })
-  .refine(validRange, "Start date must not follow end date");
+  .refine(validRange, "Start date must not follow end date")
+  .refine(validGroup, "Select a group or ungrouped categories, never both");
 
 export const transactionExportInput = transactionSearch;

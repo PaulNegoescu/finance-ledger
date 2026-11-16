@@ -4,6 +4,7 @@ import {
   importRequest,
   transactionSearch,
   transactionQuery,
+  transactionExportInput,
 } from "./validation";
 const base = { account: "Demo", currency: "RON", csv: "demo" };
 it("enforces byte rather than character limits for UTF-8 uploads", () => {
@@ -56,5 +57,23 @@ it("validates report drill-down links with the same filters as transaction queri
   ]) {
     expect(() => transactionSearch.parse(value)).toThrow();
     expect(() => transactionQuery.parse(value)).toThrow();
+  }
+});
+
+it("validates group drilldown filters consistently for URLs, lists and exports", () => {
+  const groupId = "00000000-0000-4000-8000-000000000001";
+  for (const schema of [
+    transactionSearch,
+    transactionQuery,
+    transactionExportInput,
+  ]) {
+    expect(
+      schema.parse({ groupId, flow: "out", currency: "RON" }),
+    ).toMatchObject({ groupId, flow: "out", currency: "RON" });
+    expect(schema.parse({ ungrouped: true })).toMatchObject({
+      ungrouped: true,
+    });
+    expect(() => schema.parse({ groupId: "invalid" })).toThrow();
+    expect(() => schema.parse({ groupId, ungrouped: true })).toThrow();
   }
 });

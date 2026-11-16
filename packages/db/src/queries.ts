@@ -31,6 +31,11 @@ export class TransactionExportLimitError extends Error {
 }
 function transactionWhere(query: z.infer<typeof transactionExportInput>) {
   return and(
+    query.ungrouped
+      ? sql`not exists (select 1 from ${categories} where ${categories.id} = ${transactions.categoryId} and ${categories.groupId} is not null)`
+      : query.groupId
+        ? sql`exists (select 1 from ${categories} where ${categories.id} = ${transactions.categoryId} and ${categories.groupId} = ${query.groupId})`
+        : undefined,
     query.currency ? eq(transactions.currency, query.currency) : undefined,
     query.flow === "in"
       ? gt(transactions.amountMinor, 0)
